@@ -7,7 +7,7 @@
 #ifndef Class_DxText_Header
 #define Class_DxText_Header
 
-#include "Dx12Process.h"
+#include "DX_3DCG\Dx12ProcessCore.h"
 #define STRTEX_MAX_PCS 40
 #define STR_MAX_LENGTH 40
 #define VAL_PCS 10

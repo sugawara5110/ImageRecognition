@@ -9,11 +9,12 @@
 #include "NeuralNetwork\ConvolutionNN.h"
 #include "Direct3DWrapper\Dx12Process.h"
 #include "Direct3DWrapper/DxText.h"
+#include "Direct3DWrapper\Dx_NN.h"
 
 class ImageRecognition : public PolygonData2D {
 
 private:
-	NeuralNetwork *nn = nullptr;
+	DxNeuralNetwork *nn = nullptr;
 	Pooling *po[2] = { nullptr };
 	ConvolutionNN *cn[2] = { nullptr };
 	UINT *numN = nullptr;

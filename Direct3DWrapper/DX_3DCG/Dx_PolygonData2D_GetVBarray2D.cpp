@@ -4,7 +4,7 @@
 //**                                    GetVBarray2Dä÷êî                                 **//
 //*****************************************************************************************//
 
-#include "Dx12Process.h"
+#include "Dx12ProcessCore.h"
 
 std::mutex PolygonData2D::mtx;
 

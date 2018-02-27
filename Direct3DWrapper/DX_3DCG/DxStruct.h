@@ -258,4 +258,12 @@ struct CONSTANT_BUFFER_PostMosaic {
 	VECTOR4 blur;//xy:座標, z:強さ
 };
 
+//NeuralNetwork
+struct CONSTANT_BUFFER_NeuralNetwork {
+	VECTOR4 Lear_Depth;//学習率:x, 処理中深さ:y, MaxDepth:z
+	VECTOR4 NumNode[5];//各層のNode数:x, gNode,gError各層開始インデックス:y
+	VECTOR4 NumWeight[4];//gWeight各層開始インデックス:x
+	VECTOR4 Target[10];//target値:x
+};
+
 #endif

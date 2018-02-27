@@ -4,7 +4,7 @@
 //**                                  CreateParticleä÷êî                                 **//
 //*****************************************************************************************//
 
-#include "Dx12Process.h"
+#include "Dx_ParticleData.h"
 
 std::mutex ParticleData::mtx;
 

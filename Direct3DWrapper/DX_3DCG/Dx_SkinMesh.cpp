@@ -11,7 +11,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define FBX_PCS 5
 #define WAIT(str) do{stInitFBX_ON = TRUE;while (stSetNewPose_ON);str;stInitFBX_ON = FALSE;}while(0)
-#include "Dx12Process.h"
+#include "Dx_SkinMesh.h"
 #include <string.h>
 
 using namespace std;
@@ -23,6 +23,7 @@ volatile bool SkinMesh::stSetNewPose_ON = FALSE;
 
 FbxManager *SkinMesh::m_pSdkManager = NULL;
 FbxImporter *SkinMesh::m_pImporter = NULL;
+bool SkinMesh::ManagerCreated = false;
 
 SkinMesh_sub::SkinMesh_sub() {
 	current_frame = 0.0f;
@@ -46,13 +47,19 @@ bool SkinMesh_sub::Create(CHAR *szFileName) {
 void SkinMesh::CreateManager() {
 	m_pSdkManager = FbxManager::Create();
 	m_pImporter = FbxImporter::Create(m_pSdkManager, "my importer");
+	ManagerCreated = true;
 }
 
 void SkinMesh::DeleteManager() {
 	if (m_pSdkManager) m_pSdkManager->Destroy();
+	ManagerCreated = false;
 }
 
 SkinMesh::SkinMesh() {
+	if (!ManagerCreated) {
+		MessageBoxA(0, "CreateManager()‚ªŽÀs‚³‚ê‚Ä‚¢‚Ü‚¹‚ñ", 0, MB_OK);
+	}
+
 	ZeroMemory(this, sizeof(SkinMesh));
 	dx = Dx12Process::GetInstance();
 	mCommandList = dx->dx_sub[0].mCommandList.Get();

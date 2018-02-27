@@ -4,7 +4,7 @@
 //**                                                                                     **//
 //*****************************************************************************************//
 
-#include "Dx12Process.h"
+#include "Dx12ProcessCore.h"
 
 void Common::TextureInit(int width, int height) {
 

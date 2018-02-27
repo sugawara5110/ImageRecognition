@@ -5,7 +5,7 @@
 //*****************************************************************************************//
 
 #define _CRT_SECURE_NO_WARNINGS
-#include "Dx12Process.h"
+#include "Dx12ProcessCore.h"
 
 std::mutex PolygonData::mtx;
 

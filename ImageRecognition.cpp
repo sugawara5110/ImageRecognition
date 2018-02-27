@@ -93,7 +93,8 @@ ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int d
 	numN = new UINT[depth + 1];
 	numN[0] = wid * hei;
 	for (int i = 1; i < depth + 1; i++)numN[i] = numNode[i - 1];
-	nn = new NeuralNetwork(numN, depth + 1, filNum);
+	nn = new DxNeuralNetwork(numN, depth + 1, filNum);
+	nn->ComCreate();
 
 	dnn.SetCommandList(0);
 	dnn.GetVBarray2D(1);
@@ -187,14 +188,12 @@ void ImageRecognition::Query() {
 	if (testimInd == TestImageNum - 1)textDrawOn = true;
 	testimInd++;
 	testimInd = testimInd % TestImageNum;
-	nn->InverseQuery();
 	InverseQueryInputPixel();
 }
 
 void ImageRecognition::Training() {
 	query();
 	nn->Training();
-	nn->InverseQuery();
 	InverseQueryInputPixel();
 	if (Type == 'D') {
 		NNToPoolingBackPropagation(1);

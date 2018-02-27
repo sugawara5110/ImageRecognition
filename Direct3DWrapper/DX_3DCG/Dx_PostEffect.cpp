@@ -4,7 +4,7 @@
 //**                                                                                     **//
 //*****************************************************************************************//
 
-#include "Dx12Process.h"
+#include "Dx_PostEffect.h"
 
 PostEffect::PostEffect() {
 	dx = Dx12Process::GetInstance();

@@ -133,6 +133,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				nn = new ImageRecognition(64, 64, input, 2, 2, 'D', testnum);
 				dx->End(0);
 				dx->WaitFenceCurrent();
+				if (state == 2)nn->LoadData();
 			}
 			DxText::GetInstance()->UpDateText(L"学習モード ", 100.0f, 100.0f, 15.0f, { 0.3f, 0.3f, br0, 1.0f });
 			DxText::GetInstance()->UpDateText(L"検出モード テクスチャテスト", 100.0f, 120.0f, 15.0f, { 0.3f, 0.3f, br1, 1.0f });
@@ -152,12 +153,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				loop = loop % learningImageNum;
 				cnt++;
 			}
-			if (cnt == learningImageNum * 3) {
-				nn->SaveData();
-			}
+			
 			if (cancel) {
 				cancel = false;
 				state = 0;
+				nn->SaveData();
 				ARR_DELETE(input);
 				S_DELETE(nn);
 				drawOn = false;
@@ -172,7 +172,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			//検出
 			loop++;
 			loop = loop % testImageNum;
-			nn->LoadData();
 			if (!camOn)
 				nn->InputTexture(learningImageNum + loop, 0);
 			else nn->InputPixel(cam->GetFrame(64, 64), 64, 64);

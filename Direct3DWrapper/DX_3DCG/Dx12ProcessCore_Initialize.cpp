@@ -1,26 +1,26 @@
 //*****************************************************************************************//
 //**                                                                                     **//
-//**                   　　　          Dx12Processクラス                                 **//
+//**                   　　　          Dx12ProcessCoreクラス                             **//
 //**                                   Initialize関数                                    **//
 //*****************************************************************************************//
 
 #define _CRT_SECURE_NO_WARNINGS
-#include "Dx12Process.h"
+#include "Dx12ProcessCore.h"
 #include <WindowsX.h>
-#include "./Shader/ShaderFunction.h"
-#include "./Shader/Shader2D.h"
-#include "./Shader/Shader3D.h"
-#include "./Shader/ShaderDisp.h"
-#include "./Shader/ShaderMesh.h"
-#include "./Shader/ShaderMesh_D.h"
-#include "./Shader/ShaderParticle.h"
-#include "./Shader/ShaderSkinMesh.h"
-#include "./Shader/ShaderSkinMesh_D.h"
-#include "./Shader/ShaderWaveCom.h"
-#include "./Shader/ShaderWaveDraw.h"
-#include "./Shader/ShaderCommonPS.h"
-#include "./Shader/ShaderCommonTriangleHSDS.h"
-#include "./Shader/ShaderPostEffect.h"
+#include "./ShaderCG/ShaderFunction.h"
+#include "./ShaderCG/Shader2D.h"
+#include "./ShaderCG/Shader3D.h"
+#include "./ShaderCG/ShaderDisp.h"
+#include "./ShaderCG/ShaderMesh.h"
+#include "./ShaderCG/ShaderMesh_D.h"
+#include "./ShaderCG/ShaderParticle.h"
+#include "./ShaderCG/ShaderSkinMesh.h"
+#include "./ShaderCG/ShaderSkinMesh_D.h"
+#include "./ShaderCG/ShaderWaveCom.h"
+#include "./ShaderCG/ShaderWaveDraw.h"
+#include "./ShaderCG/ShaderCommonPS.h"
+#include "./ShaderCG/ShaderCommonTriangleHSDS.h"
+#include "./ShaderCG/ShaderPostEffect.h"
 #include <locale.h>
 
 using Microsoft::WRL::ComPtr;
@@ -86,8 +86,6 @@ void Dx12Process::DeleteInstance() {
 Dx12Process::~Dx12Process() {
 
 	WaitFenceCurrent();
-
-	SkinMesh::DeleteManager();
 
 	for (int i = 0; i < texNum; i++) {
 		RELEASE(texture[i]);
@@ -637,8 +635,6 @@ bool Dx12Process::Initialize(HWND hWnd) {
 	fog.on_off = 0.0f;
 
 	CreateShaderByteCode();
-
-	SkinMesh::CreateManager();
 
 	return TRUE;
 }
