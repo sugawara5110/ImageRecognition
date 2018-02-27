@@ -266,4 +266,9 @@ struct CONSTANT_BUFFER_NeuralNetwork {
 	VECTOR4 Target[10];//target’l:x
 };
 
+//Pooling
+struct CONSTANT_BUFFER_Pooling {
+	VECTOR4 WidHei;//Width:x, Height:y
+};
+
 #endif

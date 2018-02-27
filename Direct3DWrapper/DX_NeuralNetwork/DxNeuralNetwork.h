@@ -16,7 +16,6 @@ protected:
 
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> mRootSignatureCom = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> mPSOCom[5] = { nullptr };
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mUavHeap = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mNodeUpBuffer = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mNodeBuffer = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mNodeReadBuffer = nullptr;

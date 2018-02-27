@@ -80,7 +80,7 @@ void Pooling::ForwardPropagation() {
 						}
 					}
 				}
-				output[k][(Width / POOL) * (j / POOL) + (i / POOL)] = tmp2;
+				output[k][(Width / POOL) * (j / POOL) + (i / POOL)] = tmp / 2.0f;//’²®•û–@‚ğl‚¦‚é
 			}
 		}
 	}

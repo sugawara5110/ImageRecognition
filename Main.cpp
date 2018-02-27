@@ -166,6 +166,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 			DxText::GetInstance()->UpDateText(L"メニューに戻る場合はDelete", 550.0f, 500.0f, 15.0f, { 0.3f, 1.0f, 0.3f, 1.0f });
+			DxText::GetInstance()->UpDateText(L"顔画像検出AI実験中 ", 100.0f, 300.0f, 60.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 			drawOn = true;
 			break;
 		case 2:
@@ -188,6 +189,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 			DxText::GetInstance()->UpDateText(L"メニューに戻る場合はDelete", 550.0f, 500.0f, 15.0f, { 0.3f, 1.0f, 0.3f, 1.0f });
+			DxText::GetInstance()->UpDateText(L"顔画像検出AI実験中 ", 100.0f, 300.0f, 60.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 			drawOn = true;
 			break;
 		}

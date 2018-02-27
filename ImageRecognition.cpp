@@ -41,7 +41,8 @@ ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int d
 			wid = cn[0]->GetOutWidth();
 			hei = cn[0]->GetOutHeight();
 		}
-		po[0] = new Pooling(wid, hei, filNum);
+		po[0] = new DxPooling(wid, hei, filNum);
+		po[0]->ComCreate();
 		wid = po[0]->GetOutWidth();
 		hei = po[0]->GetOutHeight();
 
@@ -72,7 +73,8 @@ ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int d
 		dcn[1].TexOn();
 		dcn[1].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 
-		po[1] = new Pooling(wid, hei, filNum);
+		po[1] = new DxPooling(wid, hei, filNum);
+		po[1]->ComCreate();
 		wid = po[1]->GetOutWidth();
 		hei = po[1]->GetOutHeight();
 
@@ -218,14 +220,14 @@ void ImageRecognition::RunConvolutionToPooling(UINT ind) {
 }
 
 void ImageRecognition::RunPoolingToConvolution() {
-	po[0]->ForwardPropagation();
+	po[0]->Query();
 	for (unsigned int k = 0; k < filNum; k++) {
 		cn[1]->Input(po[0]->Output(k), k);
 	}
 }
 
 void ImageRecognition::RunPoolingToNN(UINT ind) {
-	po[ind]->ForwardPropagation();
+	po[ind]->Query();
 	for (unsigned int k = 0; k < filNum; k++) {
 		nn->InputArray(po[ind]->Output(k), k);
 	}
@@ -235,13 +237,13 @@ void ImageRecognition::NNToPoolingBackPropagation(UINT ind) {
 	for (unsigned int k = 0; k < filNum; k++) {
 		po[ind]->InputError(nn->GetError(k), k);
 	}
-	po[ind]->BackPropagation();
+	po[ind]->Training();
 }
 
 void ImageRecognition::ConvolutionToPoolingBackPropagation() {
 	for (unsigned int k = 0; k < filNum; k++)
 		po[0]->InputError(cn[1]->GetError(k), k);
-	po[0]->BackPropagation();
+	po[0]->Training();
 }
 
 void ImageRecognition::PoolingToConvolutionBackPropagation(UINT ind) {
