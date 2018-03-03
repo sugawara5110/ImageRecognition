@@ -57,6 +57,7 @@ class PostEffect;
 class Common;
 class DxNeuralNetwork;
 class DxPooling;
+class DxConvolution;
 //ëOï˚êÈåæ
 
 class Dx12Process_sub final{
@@ -73,6 +74,7 @@ private:
 	friend Common;
 	friend DxNeuralNetwork;
 	friend DxPooling;
+	friend DxConvolution;
 
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mCmdListAlloc[2];
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
@@ -98,6 +100,7 @@ private:
 	friend Common;
 	friend DxNeuralNetwork;
 	friend DxPooling;
+	friend DxConvolution;
 
 	Microsoft::WRL::ComPtr<IDXGIFactory4> mdxgiFactory;
 	Microsoft::WRL::ComPtr<ID3D12Device> md3dDevice;

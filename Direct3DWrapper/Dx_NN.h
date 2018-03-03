@@ -9,5 +9,6 @@
 
 #include "DX_NeuralNetwork\DxNeuralNetwork.h"
 #include "DX_NeuralNetwork\DxPooling.h"
+#include "DX_NeuralNetwork\DxConvolution.h"
 
 #endif

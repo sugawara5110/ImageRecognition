@@ -124,6 +124,11 @@ void ConvolutionNN::BackPropagation() {
 
 	//‰º‘w‚©‚çŒë·“`”À
 	for (unsigned int k = 0; k < FilNum; k++) {
+		for (unsigned int i = 0; i < Width * Height; i++) {
+			outputError[k][i] = 0.0f;
+		}
+	}
+	for (unsigned int k = 0; k < FilNum; k++) {
 		for (unsigned int j = 0; j < Height; j += filterStep) {
 			unsigned int jo = j / filterStep;
 			for (unsigned int i = 0; i < Width; i += filterStep) {
@@ -133,7 +138,7 @@ void ConvolutionNN::BackPropagation() {
 				unsigned int cnt = 0;
 				for (unsigned int j1 = jo; j1 < elNumWid + jo; j1++) {
 					for (unsigned int i1 = io; i1 < elNumWid + io; i1++) {
-						outputError[k][Width * j + i] = inputError[k][(OutWid + Padding) * j1 + i1] * fil[k][cnt++];
+						outputError[k][Width * j + i] += inputError[k][(OutWid + Padding) * j1 + i1] * fil[k][cnt++];
 					}
 				}
 			}

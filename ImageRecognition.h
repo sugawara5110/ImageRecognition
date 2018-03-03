@@ -16,7 +16,7 @@ class ImageRecognition : public PolygonData2D {
 private:
 	DxNeuralNetwork *nn = nullptr;
 	DxPooling *po[2] = { nullptr };
-	ConvolutionNN *cn[2] = { nullptr };
+	DxConvolution *cn[2] = { nullptr };
 	UINT *numN = nullptr;
 	UINT Width; //入力画像サイズ
 	UINT Height;//入力画像サイズ

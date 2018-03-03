@@ -19,7 +19,8 @@ ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int d
 	unsigned int wid = Width;
 	unsigned int hei = Height;
 	if (Type == 'C' || Type == 'D') {
-		cn[0] = new ConvolutionNN(wid, hei, filNum, 3, 1);
+		cn[0] = new DxConvolution(wid, hei, filNum, 3, 1);
+		cn[0]->ComCreate();
 		wid = cn[0]->GetOutWidth();
 		hei = cn[0]->GetOutHeight();
 
@@ -58,7 +59,8 @@ ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int d
 		dpo[0].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 	}
 	if (Type == 'D') {
-		cn[1] = new ConvolutionNN(wid, hei, filNum);
+		cn[1] = new DxConvolution(wid, hei, filNum);
+		cn[1]->ComCreate();
 		wid = cn[1]->GetOutWidth();
 		hei = cn[1]->GetOutHeight();
 
@@ -213,7 +215,7 @@ void ImageRecognition::Training() {
 }
 
 void ImageRecognition::RunConvolutionToPooling(UINT ind) {
-	cn[ind]->ForwardPropagation();
+	cn[ind]->Query();
 	for (unsigned int k = 0; k < filNum; k++) {
 		po[ind]->Input(cn[ind]->Output(k), k);
 	}
@@ -249,7 +251,7 @@ void ImageRecognition::ConvolutionToPoolingBackPropagation() {
 void ImageRecognition::PoolingToConvolutionBackPropagation(UINT ind) {
 	for (unsigned int k = 0; k < filNum; k++)
 		cn[ind]->InputError(po[ind]->GetError(k), k);
-	cn[ind]->BackPropagation();
+	cn[ind]->Training();
 }
 
 void ImageRecognition::InputTexture(int Tno, int dir) {

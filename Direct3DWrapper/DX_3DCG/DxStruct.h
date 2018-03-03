@@ -271,4 +271,11 @@ struct CONSTANT_BUFFER_Pooling {
 	VECTOR4 WidHei;//Width:x, Height:y
 };
 
+//Convolution
+struct CONSTANT_BUFFER_Convolution {
+	VECTOR4 WidHei;
+	VECTOR4 filWid_filStep;
+	VECTOR4 Lear;
+};
+
 #endif

@@ -552,7 +552,7 @@ void DxNeuralNetwork::LoadData() {
 	subResourceDataWeight.SlicePitch = subResourceDataWeight.RowPitch;
 	dx->Bigin(com_no);
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mWeightBuffer.Get(),
-		D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST));
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
 	UpdateSubresources(mCommandList, mWeightBuffer.Get(), mWeightUpBuffer.Get(), 0, 0, 1, &subResourceDataWeight);
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mWeightBuffer.Get(),
 		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
