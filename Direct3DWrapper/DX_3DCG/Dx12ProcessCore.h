@@ -55,6 +55,7 @@ class DxText;
 class Wave;
 class PostEffect;
 class Common;
+class DxNNCommon;
 class DxNeuralNetwork;
 class DxPooling;
 class DxConvolution;
@@ -72,6 +73,7 @@ private:
 	friend Wave;
 	friend PostEffect;
 	friend Common;
+	friend DxNNCommon;
 	friend DxNeuralNetwork;
 	friend DxPooling;
 	friend DxConvolution;
@@ -98,6 +100,7 @@ private:
 	friend Wave;
 	friend PostEffect;
 	friend Common;
+	friend DxNNCommon;
 	friend DxNeuralNetwork;
 	friend DxPooling;
 	friend DxConvolution;
@@ -472,10 +475,12 @@ protected:
 	ID3D12Resource *GetSwapChainBuffer();
 	ID3D12Resource *GetDepthStencilBuffer();
 	ID3D12Resource *GetTexture(int Num);
+	D3D12_RESOURCE_STATES GetTextureStates();
 	ID3D12Resource *GetTextureUp(int Num);
 	Microsoft::WRL::ComPtr<ID3DBlob> CompileShader(LPSTR szFileName, size_t size, LPSTR szFuncName, LPSTR szProfileName);
 
 public:
+	void CopyResource(ID3D12Resource *texture, D3D12_RESOURCE_STATES res);
 	void TextureInit(int width, int height);
 	void SetTextureMPixel(UINT **m_pix, BYTE r, BYTE g, BYTE b, BYTE a);
 };

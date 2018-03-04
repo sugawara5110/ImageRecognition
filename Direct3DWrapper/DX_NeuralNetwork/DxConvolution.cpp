@@ -318,22 +318,23 @@ void DxConvolution::BackPropagation() {
 }
 
 void DxConvolution::Query() {
-	TestInput();
+	//TestInput();
 	InputResourse();
 	ForwardPropagation();
 	CopyOutputResourse();
-	TestOutput();
+	TextureCopy(mOutputBuffer.Get(), com_no);
+	//TestOutput();
 }
 
 void DxConvolution::Training() {
-	TestInErr();
-	TestFilter();
+	//TestInErr();
+	//TestFilter();
 	InputErrResourse();
 	BackPropagation();
 	CopyOutputErrResourse();
 	CopyFilterResourse();
-	TestFilter();
-	TestOutErr();
+	//TestFilter();
+	//TestOutErr();
 }
 
 void DxConvolution::TestFilter() {

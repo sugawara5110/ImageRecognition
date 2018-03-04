@@ -453,6 +453,7 @@ void DxNeuralNetwork::Query() {
 	CopyNodeResourse();
 	CopyOutput();
 	InverseQuery();
+	TextureCopy(mNodeBuffer.Get(), com_no);
 	CopyNodeResourse();
 	CopyInverse();
 }
@@ -469,6 +470,7 @@ void DxNeuralNetwork::Training() {
 
 	//Å´BackPropagation()ÇÃíºëOÇ…é¿çsÇµÇ»Ç¢éñ
 	InverseQuery();
+	TextureCopy(mNodeBuffer.Get(), com_no);
 	CopyNodeResourse();
 	CopyInverse();
 }

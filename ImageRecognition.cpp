@@ -10,6 +10,8 @@
 ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int depth, UINT filnum, UCHAR type, int testImageNum) {
 
 	TestImageNum = testImageNum;
+	inTexNo = new int[TestImageNum];
+	for (int i = 0; i < TestImageNum; i++)inTexNo[i] = 0;
 	out = new float[TestImageNum];
 	Width = width;
 	Height = height;
@@ -23,11 +25,7 @@ ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int d
 		cn[0]->ComCreate();
 		wid = cn[0]->GetOutWidth();
 		hei = cn[0]->GetOutHeight();
-
-		pixCN[0] = new UINT*[hei * filNum];
-		for (UINT i = 0; i < hei * filNum; i++) {
-			pixCN[0][i] = new UINT[wid];
-		}
+		cn[0]->CreareNNTexture(wid, hei, filNum);
 
 		dcn[0].SetCommandList(0);
 		dcn[0].GetVBarray2D(1);
@@ -46,11 +44,7 @@ ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int d
 		po[0]->ComCreate();
 		wid = po[0]->GetOutWidth();
 		hei = po[0]->GetOutHeight();
-
-		pixPO[0] = new UINT*[hei * filNum];
-		for (UINT i = 0; i < hei * filNum; i++) {
-			pixPO[0][i] = new UINT[wid];
-		}
+		po[0]->CreareNNTexture(wid, hei, filNum);
 
 		dpo[0].SetCommandList(0);
 		dpo[0].GetVBarray2D(1);
@@ -63,11 +57,7 @@ ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int d
 		cn[1]->ComCreate();
 		wid = cn[1]->GetOutWidth();
 		hei = cn[1]->GetOutHeight();
-
-		pixCN[1] = new UINT*[hei * filNum];
-		for (UINT i = 0; i < hei * filNum; i++) {
-			pixCN[1][i] = new UINT[wid];
-		}
+		cn[1]->CreareNNTexture(wid, hei, filNum);
 
 		dcn[1].SetCommandList(0);
 		dcn[1].GetVBarray2D(1);
@@ -79,11 +69,7 @@ ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int d
 		po[1]->ComCreate();
 		wid = po[1]->GetOutWidth();
 		hei = po[1]->GetOutHeight();
-
-		pixPO[1] = new UINT*[hei * filNum];
-		for (UINT i = 0; i < hei * filNum; i++) {
-			pixPO[1][i] = new UINT[wid];
-		}
+		po[1]->CreareNNTexture(wid, hei, filNum);
 
 		dpo[1].SetCommandList(0);
 		dpo[1].GetVBarray2D(1);
@@ -92,13 +78,12 @@ ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int d
 		dpo[1].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 	}
 
-	pixNN = new UINT*[hei * filNum];
-	for (UINT i = 0; i < hei * filNum; i++)pixNN[i] = new UINT[wid];
 	numN = new UINT[depth + 1];
 	numN[0] = wid * hei;
 	for (int i = 1; i < depth + 1; i++)numN[i] = numNode[i - 1];
 	nn = new DxNeuralNetwork(numN, depth + 1, filNum);
 	nn->ComCreate();
+	nn->CreareNNTexture(wid, hei, filNum);
 
 	dnn.SetCommandList(0);
 	dnn.GetVBarray2D(1);
@@ -135,23 +120,13 @@ ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int d
 }
 
 ImageRecognition::~ImageRecognition() {
-	for (UINT k = 0; k < 2; k++) {
-		if (pixCN[k] != nullptr) {
-			for (UINT i = 0; i < cn[k]->GetOutHeight() * filNum; i++)ARRAY_DELETE(pixCN[k][i]);
-			ARRAY_DELETE(pixCN[k]);
-		}
-		if (pixPO[k] != nullptr) {
-			for (UINT i = 0; i < po[k]->GetOutHeight() * filNum; i++)ARRAY_DELETE(pixPO[k][i]);
-			ARRAY_DELETE(pixPO[k]);
-		}
-	}
-	for (UINT i = 0; i < nnHeight * filNum; i++)ARRAY_DELETE(pixNN[i]);
-	ARRAY_DELETE(pixNN);
+
 	for (int k = 0; k < TestImageNum; k++) {
 		for (UINT i = 0; i < Height; i++)ARRAY_DELETE(pixIn[k][i]);
 	}
 	for (int k = 0; k < TestImageNum; k++)ARRAY_DELETE(pixIn[k]);
 	ARRAY_DELETE(pixIn);
+	ARRAY_DELETE(inTexNo);
 	ARRAY_DELETE(numN);
 	SIN_DELETE(nn);
 	SIN_DELETE(po[0]);
@@ -169,19 +144,14 @@ void ImageRecognition::SetTargetEl(float el, unsigned int Num) {
 void ImageRecognition::query() {
 	if (Type == 'C' || Type == 'D') {
 		RunConvolutionToPooling(0);
-		ConvolutionInputPixel(0);
 	}
 	if (Type == 'C' || Type == 'P') {
 		RunPoolingToNN(0);
-		PoolingInputPixel(0);
 	}
 	if (Type == 'D') {
 		RunPoolingToConvolution();
-		PoolingInputPixel(0);
 		RunConvolutionToPooling(1);
-		ConvolutionInputPixel(1);
 		RunPoolingToNN(1);
-		PoolingInputPixel(1);
 	}
 }
 
@@ -192,13 +162,11 @@ void ImageRecognition::Query() {
 	if (testimInd == TestImageNum - 1)textDrawOn = true;
 	testimInd++;
 	testimInd = testimInd % TestImageNum;
-	InverseQueryInputPixel();
 }
 
 void ImageRecognition::Training() {
 	query();
 	nn->Training();
-	InverseQueryInputPixel();
 	if (Type == 'D') {
 		NNToPoolingBackPropagation(1);
 		PoolingToConvolutionBackPropagation(1);
@@ -262,6 +230,7 @@ void ImageRecognition::InputTexture(int Tno, int dir) {
 	float width = (float)texdesc.Width;
 	//テクスチャの縦サイズ取得
 	float height = (float)texdesc.Height;
+	inTexNo[testimInd] = Tno;
 
 	D3D12_SUBRESOURCE_DATA texResource;
 
@@ -279,9 +248,6 @@ void ImageRecognition::InputTexture(int Tno, int dir) {
 
 			UINT i2 = (UINT)(((float)Width / width) * (float)i);
 			UINT j2 = (UINT)(((float)Height / height) * (float)j);
-			pixIn[testimInd][j2][i2] = (ptex[ptexI + 2] & 0xff) << 16;
-			pixIn[testimInd][j2][i2] += (ptex[ptexI + 1] & 0xff) << 8;
-			pixIn[testimInd][j2][i2] += (ptex[ptexI + 0] & 0xff);
 
 			switch (dir) {
 			case 0:
@@ -337,66 +303,21 @@ void ImageRecognition::InputPixel(UINT **pix, UINT width, UINT height) {
 	}
 }
 
-void ImageRecognition::InverseQueryInputPixel() {
-	for (unsigned int k = 0; k < filNum; k++) {
-		for (unsigned int j = 0; j < nnHeight; j++) {
-			for (unsigned int i = 0; i < nnWidth; i++) {
-				float tmp = nn->GetInverseOutputEl(k, nnWidth * j + i);
-				pixNN[nnHeight * k + j][i] = (((unsigned int)(tmp * 255)) & 0xff) << 16;
-				pixNN[nnHeight * k + j][i] += (((unsigned int)(tmp * 255)) & 0xff) << 8;
-				pixNN[nnHeight * k + j][i] += ((unsigned int)(tmp * 255)) & 0xff;
-			}
-		}
-	}
-}
-
-void ImageRecognition::PoolingInputPixel(UINT ind) {
-	unsigned int wid = po[ind]->GetOutWidth();
-	unsigned int hei = po[ind]->GetOutHeight();
-
-	for (unsigned int k = 0; k < filNum; k++) {
-		for (unsigned int j = 0; j < hei; j++) {
-			for (unsigned int i = 0; i < wid; i++) {
-				float tmp = po[ind]->OutputEl(k, wid * j + i);
-				pixPO[ind][hei * k + j][i] = (((unsigned int)(tmp * 255)) & 0xff) << 16;
-				pixPO[ind][hei * k + j][i] += (((unsigned int)(tmp * 255)) & 0xff) << 8;
-				pixPO[ind][hei * k + j][i] += ((unsigned int)(tmp * 255)) & 0xff;
-			}
-		}
-	}
-}
-
-void ImageRecognition::ConvolutionInputPixel(UINT ind) {
-	unsigned int wid = cn[ind]->GetOutWidth();
-	unsigned int hei = cn[ind]->GetOutHeight();
-
-	for (unsigned int k = 0; k < filNum; k++) {
-		for (unsigned int j = 0; j < hei; j++) {
-			for (unsigned int i = 0; i < wid; i++) {
-				float tmp = cn[ind]->OutputEl(k, wid * j + i);
-				pixCN[ind][hei * k + j][i] = (((unsigned int)(tmp * 255)) & 0xff) << 16;
-				pixCN[ind][hei * k + j][i] += (((unsigned int)(tmp * 255)) & 0xff) << 8;
-				pixCN[ind][hei * k + j][i] += ((unsigned int)(tmp * 255)) & 0xff;
-			}
-		}
-	}
-}
-
 void ImageRecognition::NNDraw() {
 	dnn.Update(705.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 75.0f, 75.0f * filNum);
-	dnn.SetTextureMPixel(pixNN, 0xff, 0xff, 0xff, 255);
+	dnn.CopyResource(nn->GetNNTextureResource(), nn->GetNNTextureResourceStates());
 	dnn.Draw();
 }
 
 void ImageRecognition::PODraw() {
 	if (Type == 'C' || Type == 'P' || Type == 'D') {
 		dpo[0].Update(125.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 75.0f, 75.0f * filNum);
-		dpo[0].SetTextureMPixel(pixPO[0], 0xff, 0xff, 0xff, 255);
+		dpo[0].CopyResource(po[0]->GetNNTextureResource(), po[0]->GetNNTextureResourceStates());
 		dpo[0].Draw();
 	}
 	if (Type == 'D') {
 		dpo[1].Update(365.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 75.0f, 75.0f * filNum);
-		dpo[1].SetTextureMPixel(pixPO[1], 0xff, 0xff, 0xff, 255);
+		dpo[1].CopyResource(po[1]->GetNNTextureResource(), po[1]->GetNNTextureResourceStates());
 		dpo[1].Draw();
 	}
 }
@@ -404,12 +325,12 @@ void ImageRecognition::PODraw() {
 void ImageRecognition::CNDraw() {
 	if (Type == 'C' || Type == 'D') {
 		dcn[0].Update(5.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 75.0f, 75.0f * filNum);
-		dcn[0].SetTextureMPixel(pixCN[0], 0xff, 0xff, 0xff, 255);
+		dcn[0].CopyResource(cn[0]->GetNNTextureResource(), cn[0]->GetNNTextureResourceStates());
 		dcn[0].Draw();
 	}
 	if (Type == 'D') {
 		dcn[1].Update(245.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 75.0f, 75.0f * filNum);
-		dcn[1].SetTextureMPixel(pixCN[1], 0xff, 0xff, 0xff, 255);
+		dcn[1].CopyResource(cn[1]->GetNNTextureResource(), cn[1]->GetNNTextureResourceStates());
 		dcn[1].Draw();
 	}
 }
@@ -417,7 +338,8 @@ void ImageRecognition::CNDraw() {
 void ImageRecognition::INDraw(float x, float y, float xsize, float ysize) {
 	for (int i = 0; i < TestImageNum; i++) {
 		din[i].Update(i * 52.0f + x, 548.0f + y, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 52.0f + xsize, 52.0f + ysize);
-		din[i].SetTextureMPixel(pixIn[i], 0xff, 0xff, 0xff, 255);
+		//din[i].SetTextureMPixel(pixIn[i], 0xff, 0xff, 0xff, 255);
+		din[i].CopyResource(GetTexture(inTexNo[i]), GetTextureStates());
 		din[i].Draw();
 	}
 }

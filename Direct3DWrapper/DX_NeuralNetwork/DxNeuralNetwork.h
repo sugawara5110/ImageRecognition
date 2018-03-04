@@ -7,9 +7,9 @@
 #ifndef Class_DxNeuralNetwork_Header
 #define Class_DxNeuralNetwork_Header
 
-#include "../DX_3DCG/Dx12ProcessCore.h"
+#include "DxNNCommon.h"
 
-class DxNeuralNetwork :public Common {
+class DxNeuralNetwork :public DxNNCommon {
 
 protected:
 	int                        com_no = 0;

@@ -6,6 +6,20 @@
 
 #include "Dx12ProcessCore.h"
 
+void Common::CopyResource(ID3D12Resource *Intexture, D3D12_RESOURCE_STATES res) {
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture,
+		D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST));
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(Intexture,
+		res, D3D12_RESOURCE_STATE_COPY_SOURCE));
+	//現在のバックバッファをインプット用バッファにコピーする
+	mCommandList->CopyResource(texture, Intexture);
+
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(Intexture,
+		D3D12_RESOURCE_STATE_COPY_SOURCE, res));
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(texture,
+		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_GENERIC_READ));
+}
+
 void Common::TextureInit(int width, int height) {
 
 	D3D12_RESOURCE_DESC texDesc = {};
@@ -14,7 +28,7 @@ void Common::TextureInit(int width, int height) {
 	texDesc.Height = height;
 	texDesc.DepthOrArraySize = 1;
 	texDesc.MipLevels = 1;
-	texDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	texDesc.SampleDesc.Count = 1;
 	texDesc.SampleDesc.Quality = 0;
 	texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
@@ -101,9 +115,9 @@ void Common::SetTextureMPixel(UINT **m_pix, BYTE r, BYTE g, BYTE b, BYTE a) {
 		UINT j1 = (UINT)(j * texResource.RowPitch);//RowPitchデータの行ピッチ、行幅、または物理サイズ (バイト単位)
 		for (int i = 0; i < width; i++) {
 			UINT ptexI = i * 4 + j1;
-			ptex[ptexI + 0] = m_pix[j][i] >> 16 & r;
+			ptex[ptexI + 2] = m_pix[j][i] >> 16 & r;
 			ptex[ptexI + 1] = m_pix[j][i] >> 8 & g;
-			ptex[ptexI + 2] = m_pix[j][i] & b;
+			ptex[ptexI + 0] = m_pix[j][i] & b;
 
 			if ((m_pix[j][i] >> 16 & b) < 50 && (m_pix[j][i] >> 8 & g) < 50 && (m_pix[j][i] & r) < 50) {
 				ptex[ptexI + 3] = 0;
@@ -381,6 +395,10 @@ ID3D12Resource *Common::GetDepthStencilBuffer() {
 
 ID3D12Resource *Common::GetTexture(int Num) {
 	return dx->texture[Num];
+}
+
+D3D12_RESOURCE_STATES Common::GetTextureStates() {
+	return D3D12_RESOURCE_STATE_GENERIC_READ;
 }
 
 ID3D12Resource *Common::GetTextureUp(int Num) {

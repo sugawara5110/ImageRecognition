@@ -7,10 +7,10 @@
 #ifndef Class_DxPooling_Header
 #define Class_DxPooling_Header
 
-#include "../DX_3DCG/Dx12ProcessCore.h"
+#include "DxNNCommon.h"
 #define PONUM 2
 
-class DxPooling :public Common {
+class DxPooling :public DxNNCommon {
 
 protected:
 	int                        com_no = 0;

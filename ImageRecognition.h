@@ -28,10 +28,8 @@ private:
 
 	PolygonData2D dnn, dpo[2], dcn[2];
 	PolygonData2D *din = nullptr;
-	UINT **pixNN = nullptr;
-	UINT **pixPO[2] = { nullptr };
-	UINT **pixCN[2] = { nullptr };
 	UINT ***pixIn = nullptr;
+	int *inTexNo = nullptr;
 	float *out = nullptr;
 	int TestImageNum = 1;
 	int testimInd = 0;
@@ -43,9 +41,6 @@ private:
 	void NNToPoolingBackPropagation(UINT ind);
 	void ConvolutionToPoolingBackPropagation();
 	void PoolingToConvolutionBackPropagation(UINT ind);
-	void InverseQueryInputPixel();
-	void PoolingInputPixel(UINT ind);
-	void ConvolutionInputPixel(UINT ind);
 	void query();
 
 public:

@@ -7,9 +7,9 @@
 #ifndef Class_DxConvolution_Header
 #define Class_DxConvolution_Header
 
-#include "../DX_3DCG/Dx12ProcessCore.h"
+#include "DxNNCommon.h"
 
-class DxConvolution :public Common {
+class DxConvolution :public DxNNCommon {
 
 protected:
 	int                        com_no = 0;

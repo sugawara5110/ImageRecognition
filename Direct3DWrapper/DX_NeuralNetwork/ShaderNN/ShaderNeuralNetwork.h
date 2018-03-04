@@ -118,4 +118,3 @@ char *ShaderNeuralNetwork =
 "   gNode[InNodeStartInd + x] = tmp;\n"
 "}\n";
 
-

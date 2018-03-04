@@ -278,4 +278,9 @@ struct CONSTANT_BUFFER_Convolution {
 	VECTOR4 Lear;
 };
 
+//NN用textureコピー
+struct NNCBTexture {
+	VECTOR4 Wid_Hei;
+};
+
 #endif

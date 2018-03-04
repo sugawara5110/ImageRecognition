@@ -219,6 +219,7 @@ void DxPooling::Query() {
 	InputResourse();
 	ForwardPropagation();
 	CopyOutputResourse();
+	TextureCopy(mOutputBuffer.Get(), com_no);
 }
 
 void DxPooling::Training() {
