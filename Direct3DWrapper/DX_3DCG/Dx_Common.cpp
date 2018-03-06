@@ -11,7 +11,7 @@ void Common::CopyResource(ID3D12Resource *Intexture, D3D12_RESOURCE_STATES res) 
 		D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_RESOURCE_STATE_COPY_DEST));
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(Intexture,
 		res, D3D12_RESOURCE_STATE_COPY_SOURCE));
-	//現在のバックバッファをインプット用バッファにコピーする
+	
 	mCommandList->CopyResource(texture, Intexture);
 
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(Intexture,

@@ -17,24 +17,23 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> mRootSignatureCom = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> mPSOCom[5] = { nullptr };
 	Microsoft::WRL::ComPtr<ID3D12Resource> mNodeUpBuffer = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mNodeBuffer = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mNodeBuffer[5] = { nullptr };
 	Microsoft::WRL::ComPtr<ID3D12Resource> mNodeReadBuffer = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mWeightUpBuffer = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mWeightBuffer = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mWeightReadBuffer = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mErrorUpBuffer = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Resource> mErrorBuffer = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mErrorBuffer[5] = { nullptr };
 	Microsoft::WRL::ComPtr<ID3D12Resource> mErrorReadBuffer = nullptr;
 
 	CONSTANT_BUFFER_NeuralNetwork cb;
 	UploadBuffer<CONSTANT_BUFFER_NeuralNetwork> *mObjectCB = nullptr;
 	Microsoft::WRL::ComPtr<ID3DBlob> pCS[5] = { nullptr };
 
-	float *node = nullptr;
+	bool firstIn = false;
+	float *input = nullptr;
 	float *weight = nullptr;
 	float *error = nullptr;
 	float *output = nullptr;
-	float *inverse = nullptr;
 
 	UINT Split = 1;
 
@@ -56,9 +55,7 @@ protected:
 	void ForwardPropagation();
 	void InverseQuery();
 	void BackPropagation();
-	void CopyNodeResourse();
-	void CopyOutput();
-	void CopyInverse();
+	void CopyOutputResourse();
 	void CopyWeightResourse();
 	void CopyErrorResourse();
 
@@ -79,8 +76,8 @@ public:
 	float GetOutputEl(UINT ElNum);
 	float *GetError(UINT arrNum);
 	float GetErrorEl(UINT arrNum, UINT ElNum);
-	float *GetInverseOutput(UINT arrNum);
-	float GetInverseOutputEl(UINT arrNum, UINT ElNum);
+	void SetInputResource(ID3D12Resource *res);
+	ID3D12Resource *GetOutErrorResource();
 	void SaveData();
 	void LoadData();
 };

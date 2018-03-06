@@ -184,41 +184,31 @@ void ImageRecognition::Training() {
 
 void ImageRecognition::RunConvolutionToPooling(UINT ind) {
 	cn[ind]->Query();
-	for (unsigned int k = 0; k < filNum; k++) {
-		po[ind]->Input(cn[ind]->Output(k), k);
-	}
+	po[ind]->SetInputResource(cn[ind]->GetOutputResource());
 }
 
 void ImageRecognition::RunPoolingToConvolution() {
 	po[0]->Query();
-	for (unsigned int k = 0; k < filNum; k++) {
-		cn[1]->Input(po[0]->Output(k), k);
-	}
+	cn[1]->SetInputResource(po[0]->GetOutputResource());
 }
 
 void ImageRecognition::RunPoolingToNN(UINT ind) {
 	po[ind]->Query();
-	for (unsigned int k = 0; k < filNum; k++) {
-		nn->InputArray(po[ind]->Output(k), k);
-	}
+	nn->SetInputResource(po[ind]->GetOutputResource());
 }
 
 void ImageRecognition::NNToPoolingBackPropagation(UINT ind) {
-	for (unsigned int k = 0; k < filNum; k++) {
-		po[ind]->InputError(nn->GetError(k), k);
-	}
+	po[ind]->SetInErrorResource(nn->GetOutErrorResource());
 	po[ind]->Training();
 }
 
 void ImageRecognition::ConvolutionToPoolingBackPropagation() {
-	for (unsigned int k = 0; k < filNum; k++)
-		po[0]->InputError(cn[1]->GetError(k), k);
+	po[0]->SetInErrorResource(cn[1]->GetOutErrorResource());
 	po[0]->Training();
 }
 
 void ImageRecognition::PoolingToConvolutionBackPropagation(UINT ind) {
-	for (unsigned int k = 0; k < filNum; k++)
-		cn[ind]->InputError(po[ind]->GetError(k), k);
+	cn[ind]->SetInErrorResource(po[ind]->GetOutErrorResource());
 	cn[ind]->Training();
 }
 
@@ -338,8 +328,10 @@ void ImageRecognition::CNDraw() {
 void ImageRecognition::INDraw(float x, float y, float xsize, float ysize) {
 	for (int i = 0; i < TestImageNum; i++) {
 		din[i].Update(i * 52.0f + x, 548.0f + y, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 52.0f + xsize, 52.0f + ysize);
-		//din[i].SetTextureMPixel(pixIn[i], 0xff, 0xff, 0xff, 255);
-		din[i].CopyResource(GetTexture(inTexNo[i]), GetTextureStates());
+		if (xsize != 0.0f)
+			din[i].SetTextureMPixel(pixIn[i], 0xff, 0xff, 0xff, 255);
+		else
+			din[i].CopyResource(GetTexture(inTexNo[i]), GetTextureStates());
 		din[i].Draw();
 	}
 }

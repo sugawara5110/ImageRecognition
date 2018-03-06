@@ -36,6 +36,7 @@ protected:
 	UINT Height;//入力画像サイズ
 	UINT OutWid;//出力画像サイズ
 	UINT OutHei;//出力画像サイズ
+	bool firstIn = false;
 
 	UINT elNumWid = 3;//奇数のみMax7
 	UINT ElNum = 9;  //elNumWid * elNumWid
@@ -93,6 +94,10 @@ public:
 	float OutputFilter(UINT arrNum, UINT ElNum);
 	float *GetError(UINT arrNum);
 	float GetErrorEl(UINT arrNum, UINT ElNum);
+	void SetInputResource(ID3D12Resource *res);
+	void SetInErrorResource(ID3D12Resource *res);
+	ID3D12Resource *GetOutErrorResource();
+	ID3D12Resource *GetOutputResource();
 	UINT GetOutWidth();
 	UINT GetOutHeight();
 	void SaveData(UINT Nnm);

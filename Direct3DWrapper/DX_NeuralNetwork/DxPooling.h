@@ -37,6 +37,7 @@ protected:
 	UINT OutHei;
 	UINT OddNumWid = 0;
 	UINT OddNumHei = 0;
+	bool firstIn = false;
 	float *input = nullptr;
 	float *output = nullptr;
 	float *inerror = nullptr;
@@ -72,6 +73,10 @@ public:
 	float OutputEl(UINT arrNum, UINT ElNum);
 	float *GetError(UINT arrNum);
 	float GetErrorEl(UINT arrNum, UINT ElNum);
+	void SetInputResource(ID3D12Resource *res);
+	void SetInErrorResource(ID3D12Resource *res);
+	ID3D12Resource *GetOutErrorResource();
+	ID3D12Resource *GetOutputResource();
 	UINT GetOutWidth();
 	UINT GetOutHeight();
 };

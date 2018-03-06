@@ -221,6 +221,7 @@ void DxConvolution::ComCreate() {
 
 void DxConvolution::FirstInput(float el, UINT ElNum) {
 	for (UINT i = 0; i < FilNum; i++)InputEl(el - 0.5f, i, ElNum);
+	firstIn = true;
 }
 
 void DxConvolution::InputEl(float el, UINT arrNum, UINT ElNum) {
@@ -321,7 +322,7 @@ void DxConvolution::Query() {
 	//TestInput();
 	InputResourse();
 	ForwardPropagation();
-	CopyOutputResourse();
+	//CopyOutputResourse();
 	TextureCopy(mOutputBuffer.Get(), com_no);
 	//TestOutput();
 }
@@ -329,9 +330,9 @@ void DxConvolution::Query() {
 void DxConvolution::Training() {
 	//TestInErr();
 	//TestFilter();
-	InputErrResourse();
+	//InputErrResourse();//直接リソースをコピーの場合使用しない(カラの配列がコピーされてしまう)
 	BackPropagation();
-	CopyOutputErrResourse();
+	//CopyOutputErrResourse();
 	CopyFilterResourse();
 	//TestFilter();
 	//TestOutErr();
@@ -408,6 +409,7 @@ void DxConvolution::TestOutErr() {
 }
 
 void DxConvolution::InputResourse() {
+	if (!firstIn)return;
 	D3D12_SUBRESOURCE_DATA subResourceData = {};
 	subResourceData.pData = input;
 	subResourceData.RowPitch = input_outerrOneNum * FilNum;
@@ -420,6 +422,7 @@ void DxConvolution::InputResourse() {
 		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 	dx->End(com_no);
 	dx->WaitFenceCurrent();
+	firstIn = false;
 }
 
 void DxConvolution::InputErrResourse() {
@@ -532,6 +535,48 @@ void DxConvolution::LoadData(UINT Num) {
 		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 	dx->End(com_no);
 	dx->WaitFenceCurrent();
+}
+
+void DxConvolution::SetInputResource(ID3D12Resource *res) {
+	dx->Bigin(com_no);
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mInputBuffer.Get(),
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+	mCommandList->CopyResource(mInputBuffer.Get(), res);
+
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res,
+		D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mInputBuffer.Get(),
+		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	dx->End(com_no);
+	dx->WaitFenceCurrent();
+}
+
+void DxConvolution::SetInErrorResource(ID3D12Resource *res) {
+	dx->Bigin(com_no);
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mInErrorBuffer.Get(),
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+	mCommandList->CopyResource(mInErrorBuffer.Get(), res);
+
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res,
+		D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mInErrorBuffer.Get(),
+		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	dx->End(com_no);
+	dx->WaitFenceCurrent();
+}
+
+ID3D12Resource *DxConvolution::GetOutErrorResource() {
+	return mOutErrorBuffer.Get();
+}
+
+ID3D12Resource *DxConvolution::GetOutputResource() {
+	return mOutputBuffer.Get();
 }
 
 UINT DxConvolution::GetOutWidth() {

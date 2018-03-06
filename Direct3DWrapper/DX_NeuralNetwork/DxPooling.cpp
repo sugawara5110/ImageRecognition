@@ -159,6 +159,7 @@ void DxPooling::ComCreate() {
 
 void DxPooling::FirstInput(float el, UINT ElNum) {
 	for (UINT i = 0; i < PoolNum; i++)InputEl(el - 0.5f, i, ElNum);
+	firstIn = true;
 }
 
 void DxPooling::Input(float *inArr, UINT arrNum) {
@@ -218,17 +219,18 @@ void DxPooling::BackPropagation() {
 void DxPooling::Query() {
 	InputResourse();
 	ForwardPropagation();
-	CopyOutputResourse();
+	//CopyOutputResourse();
 	TextureCopy(mOutputBuffer.Get(), com_no);
 }
 
 void DxPooling::Training() {
-	InputErrResourse();
+	//InputErrResourse();
 	BackPropagation();
-	CopyOutputErrResourse();
+	//CopyOutputErrResourse();
 }
 
 void DxPooling::InputResourse() {
+	if (!firstIn)return;
 	D3D12_SUBRESOURCE_DATA subResourceData = {};
 	subResourceData.pData = input;
 	subResourceData.RowPitch = input_outerrOneNum * PoolNum;
@@ -241,6 +243,7 @@ void DxPooling::InputResourse() {
 		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 	dx->End(com_no);
 	dx->WaitFenceCurrent();
+	firstIn = false;
 }
 
 void DxPooling::InputErrResourse() {
@@ -300,6 +303,48 @@ float *DxPooling::GetError(UINT arrNum) {
 
 float DxPooling::GetErrorEl(UINT arrNum, UINT ElNum) {
 	return outerror[arrNum * input_outerrOneNum + ElNum];
+}
+
+void DxPooling::SetInputResource(ID3D12Resource *res) {
+	dx->Bigin(com_no);
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mInputBuffer.Get(),
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+	mCommandList->CopyResource(mInputBuffer.Get(), res);
+
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res,
+		D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mInputBuffer.Get(),
+		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	dx->End(com_no);
+	dx->WaitFenceCurrent();
+}
+
+void DxPooling::SetInErrorResource(ID3D12Resource *res) {
+	dx->Bigin(com_no);
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mInErrorBuffer.Get(),
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
+
+	mCommandList->CopyResource(mInErrorBuffer.Get(), res);
+
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(res,
+		D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mInErrorBuffer.Get(),
+		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	dx->End(com_no);
+	dx->WaitFenceCurrent();
+}
+
+ID3D12Resource *DxPooling::GetOutErrorResource() {
+	return mOutErrorBuffer.Get();
+}
+
+ID3D12Resource *DxPooling::GetOutputResource() {
+	return mOutputBuffer.Get();
 }
 
 UINT DxPooling::GetOutWidth() {

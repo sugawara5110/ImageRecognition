@@ -3,9 +3,11 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 char *ShaderNeuralNetwork =
-"RWStructuredBuffer<float> gNode : register(u0);\n"
-"RWStructuredBuffer<float> gWeight : register(u1);\n"
-"RWStructuredBuffer<float> gError : register(u2);\n"
+"RWStructuredBuffer<float> gInNode : register(u0);\n"
+"RWStructuredBuffer<float> gOutNode : register(u1);\n"
+"RWStructuredBuffer<float> gWeight : register(u2);\n"
+"RWStructuredBuffer<float> gInError : register(u3);\n"
+"RWStructuredBuffer<float> gOutError : register(u4);\n"
 
 "cbuffer global  : register(b0)\n"
 "{\n"
@@ -29,8 +31,6 @@ char *ShaderNeuralNetwork =
 "[numthreads(1, 1, 1)]\n"//ç≈ëÂX * Y * Z = 1024
 "void NNFPCS(int2 outid : SV_DispatchThreadID)\n"
 "{\n"
-"   float InNodeStartInd = gNumNode[gLear_Depth.y].y;\n"
-"   float OutNodeStartInd = gNumNode[gLear_Depth.y + 1].y;\n"
 "   float WeightStartInd = gNumWeight[gLear_Depth.y].x;\n"
 "   float InNodeNum = gNumNode[gLear_Depth.y].x;\n"
 
@@ -38,10 +38,10 @@ char *ShaderNeuralNetwork =
 "   int x = outid.x;\n"
 "   for(int i = 0; i < InNodeNum; i++)\n"
 "   {\n"
-"      tmp += gNode[InNodeStartInd + i] * gWeight[WeightStartInd + InNodeNum * x + i];\n"
+"      tmp += gInNode[i] * gWeight[WeightStartInd + InNodeNum * x + i];\n"
 "   }\n"
 "   float sig = 1.0f / (1.0f + pow(2.71828182846, -tmp));\n"
-"   gNode[OutNodeStartInd + x] = sig;\n"
+"   gOutNode[x] = sig;\n"
 "}\n"
 
 //ãtì`î¿ëOTargetílì¸óÕ gLear_Depth.y = Depth-1ÇÃÇ›
@@ -49,8 +49,7 @@ char *ShaderNeuralNetwork =
 "void InTargetCS(int2 inid : SV_DispatchThreadID)\n"
 "{\n"
 "   int x = inid.x;\n"
-"   float InNodeStartInd = gNumNode[gLear_Depth.y].y;\n"
-"   gError[InNodeStartInd + x] = gTarget[x].x - gNode[InNodeStartInd + x];\n"
+"   gInError[x] = gTarget[x].x - gInNode[x];\n"
 "}\n"
 
 //ãtì`î¿
@@ -58,8 +57,6 @@ char *ShaderNeuralNetwork =
 "[numthreads(1, 1, 1)]\n"//ç≈ëÂX * Y * Z = 1024
 "void NNBPCS0(int2 inid : SV_DispatchThreadID)\n"
 "{\n"
-"   float InNodeStartInd = gNumNode[gLear_Depth.y].y;\n"
-"   float OutNodeStartInd = gNumNode[gLear_Depth.y + 1].y;\n"
 "   float WeightStartInd = gNumWeight[gLear_Depth.y].x;\n"
 "   float InNodeNum = gNumNode[gLear_Depth.y].x;\n"
 "   float OutNodeNum = gNumNode[gLear_Depth.y + 1].x;\n"
@@ -68,9 +65,9 @@ char *ShaderNeuralNetwork =
 "   int x = inid.x;\n"
 "   for(int i = 0; i < OutNodeNum; i++)\n"
 "   {\n"
-"      tmp += gError[OutNodeStartInd + i] * gWeight[WeightStartInd + InNodeNum * i + x];\n"
+"      tmp += gOutError[i] * gWeight[WeightStartInd + InNodeNum * i + x];\n"
 "   }\n"
-"   gError[InNodeStartInd + x] = tmp;\n"
+"   gInError[x] = tmp;\n"
 "}\n"
 
 //weightílçXêV
@@ -78,15 +75,13 @@ char *ShaderNeuralNetwork =
 "[numthreads(1, 1, 1)]\n"//ç≈ëÂX * Y * Z = 1024
 "void NNBPCS1(int2 inXoutY : SV_DispatchThreadID)\n"
 "{\n"
-"   float InNodeStartInd = gNumNode[gLear_Depth.y].y;\n"
-"   float OutNodeStartInd = gNumNode[gLear_Depth.y + 1].y;\n"
 "   float WeightStartInd = gNumWeight[gLear_Depth.y].x;\n"
 
 "   int x = inXoutY.x;\n"//Inë§
 "   int y = inXoutY.y;\n"//Outë§
 "   float tmp = 0.0f;\n"
-"   tmp = gError[OutNodeStartInd + y] * gNode[OutNodeStartInd + y] * (1.0f - gNode[OutNodeStartInd + y]);\n"
-"   tmp = tmp * gNode[InNodeStartInd + x] * gLear_Depth.x;\n"
+"   tmp = gOutError[y] * gOutNode[y] * (1.0f - gOutNode[y]);\n"
+"   tmp = tmp * gInNode[x] * gLear_Depth.x;\n"
 "   int w = gNumNode[gLear_Depth.y].x * y + x;\n"
 "   gWeight[WeightStartInd + w] += tmp;\n"
 "}\n"
@@ -96,8 +91,6 @@ char *ShaderNeuralNetwork =
 "[numthreads(1, 1, 1)]\n"//ç≈ëÂX * Y * Z = 1024
 "void NNInverseCS(int2 inid : SV_DispatchThreadID)\n"
 "{\n"
-"   float InNodeStartInd = gNumNode[gLear_Depth.y - 1].y;\n"
-"   float OutNodeStartInd = gNumNode[gLear_Depth.y].y;\n"
 "   float WeightStartInd = gNumWeight[gLear_Depth.y - 1].x;\n"
 "   float InNodeNum = gNumNode[gLear_Depth.y - 1].x;\n"
 "   float OutNodeNum = gNumNode[gLear_Depth.y].x;\n"
@@ -108,13 +101,13 @@ char *ShaderNeuralNetwork =
 "   {\n"
 "      float logit;\n"
 "      if(gLear_Depth.y == gLear_Depth.z)logit = gTarget[i].x;\n"
-"      else logit = gNode[OutNodeStartInd + i];\n"
+"      else logit = gOutNode[i];\n"
 
 "      if (logit < 0.01f)logit = 0.01f;\n"
 "      if (logit > 0.99f)logit = 0.99f;\n"
 "      logit = log(logit / (1.0f - logit));\n"
 "      tmp += logit * gWeight[WeightStartInd + InNodeNum * i + x];\n"
 "   }\n"
-"   gNode[InNodeStartInd + x] = tmp;\n"
+"   gInNode[x] = tmp;\n"
 "}\n";
 
