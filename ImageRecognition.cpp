@@ -21,7 +21,7 @@ ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int d
 	unsigned int wid = Width;
 	unsigned int hei = Height;
 	if (Type == 'C' || Type == 'D') {
-		cn[0] = new DxConvolution(wid, hei, filNum, 3, 1);
+		cn[0] = new DxConvolution(wid, hei, filNum, 1, 5, 1);
 		cn[0]->ComCreate();
 		wid = cn[0]->GetOutWidth();
 		hei = cn[0]->GetOutHeight();
@@ -53,7 +53,7 @@ ImageRecognition::ImageRecognition(UINT width, UINT height, UINT *numNode, int d
 		dpo[0].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 	}
 	if (Type == 'D') {
-		cn[1] = new DxConvolution(wid, hei, filNum);
+		cn[1] = new DxConvolution(wid, hei, filNum, 1, 5, 1);
 		cn[1]->ComCreate();
 		wid = cn[1]->GetOutWidth();
 		hei = cn[1]->GetOutHeight();
@@ -155,8 +155,22 @@ void ImageRecognition::query() {
 	}
 }
 
+void ImageRecognition::queryDetec() {
+	if (Type == 'C' || Type == 'D') {
+		RunConvolutionToPoolingDetec(0);
+	}
+	if (Type == 'C' || Type == 'P') {
+		RunPoolingToNNDetec(0);
+	}
+	if (Type == 'D') {
+		RunPoolingToConvolutionDetec();
+		RunConvolutionToPoolingDetec(1);
+		RunPoolingToNNDetec(1);
+	}
+}
+
 void ImageRecognition::Query() {
-	query();
+	queryDetec();
 	nn->Query();
 	out[testimInd] = nn->GetOutputEl(0);
 	if (testimInd == TestImageNum - 1)textDrawOn = true;
@@ -194,6 +208,21 @@ void ImageRecognition::RunPoolingToConvolution() {
 
 void ImageRecognition::RunPoolingToNN(UINT ind) {
 	po[ind]->Query();
+	nn->SetInputResource(po[ind]->GetOutputResource());
+}
+
+void ImageRecognition::RunConvolutionToPoolingDetec(UINT ind) {
+	cn[ind]->Detection();
+	po[ind]->SetInputResource(cn[ind]->GetOutputResource());
+}
+
+void ImageRecognition::RunPoolingToConvolutionDetec() {
+	po[0]->Detection();
+	cn[1]->SetInputResource(po[0]->GetOutputResource());
+}
+
+void ImageRecognition::RunPoolingToNNDetec(UINT ind) {
+	po[ind]->Detection();
 	nn->SetInputResource(po[ind]->GetOutputResource());
 }
 

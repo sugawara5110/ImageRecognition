@@ -42,6 +42,7 @@ protected:
 	UINT ElNum = 9;  //elNumWid * elNumWid
 	UINT FilNum = 1;
 	UINT filterStep = 1;//2ÇÃó›èÊÇÃÇ›,Max8Ç‹Ç≈
+	UINT detectionNum = 1;
 
 	UINT filSize = 0;
 	UINT input_outerrOneNum = 0;
@@ -63,7 +64,7 @@ protected:
 	float learningRate = 0.1f;
 
 	DxConvolution() {}
-	void ForwardPropagation();
+	void ForwardPropagation(UINT detectionmum);
 	void BackPropagation();
 	void InputResourse();
 	void InputErrResourse();
@@ -78,19 +79,20 @@ protected:
 	void TestOutErr();
 
 public:
-	DxConvolution(UINT width, UINT height, UINT filNum, UINT elnumwid = 3, UINT filstep = 1);
+	DxConvolution(UINT width, UINT height, UINT filNum, UINT detectionnum = 1, UINT elnumwid = 3, UINT filstep = 1);
 	~DxConvolution();
 	void SetCommandList(int no);
 	void ComCreate();
 	void Query();
 	void Training();
+	void Detection();
 	void SetLearningLate(float rate);
-	void FirstInput(float el, UINT ElNum);
-	void Input(float *inArr, UINT arrNum);
-	void InputEl(float el, UINT arrNum, UINT ElNum);
+	void FirstInput(float el, UINT ElNum, UINT detectionInd = 0);
+	void Input(float *inArr, UINT arrNum, UINT detectionInd = 0);
+	void InputEl(float el, UINT arrNum, UINT ElNum, UINT detectionInd = 0);
 	void InputError(float *inArr, UINT arrNum);
-	float *Output(UINT arrNum);
-	float OutputEl(UINT arrNum, UINT ElNum);
+	float *Output(UINT arrNum, UINT detectionInd = 0);
+	float OutputEl(UINT arrNum, UINT ElNum, UINT detectionInd = 0);
 	float OutputFilter(UINT arrNum, UINT ElNum);
 	float *GetError(UINT arrNum);
 	float GetErrorEl(UINT arrNum, UINT ElNum);

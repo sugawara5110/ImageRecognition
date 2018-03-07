@@ -38,10 +38,14 @@ private:
 	void RunConvolutionToPooling(UINT ind);
 	void RunPoolingToConvolution();
 	void RunPoolingToNN(UINT ind);
+	void RunConvolutionToPoolingDetec(UINT ind);
+	void RunPoolingToConvolutionDetec();
+	void RunPoolingToNNDetec(UINT ind);
 	void NNToPoolingBackPropagation(UINT ind);
 	void ConvolutionToPoolingBackPropagation();
 	void PoolingToConvolutionBackPropagation(UINT ind);
 	void query();
+	void queryDetec();
 
 public:
 	ImageRecognition(UINT width, UINT height, UINT *numNode, int depth, UINT filNum, UCHAR type, int testImageNum);

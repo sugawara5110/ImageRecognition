@@ -28,10 +28,13 @@ char *ShaderConvolution =
 //順伝搬
 //出力側を並列処理,入力側をループ(スレッド数は出力側と同数)
 "[numthreads(1, 1, 1)]\n"//最大X * Y * Z = 1024
-"void CNFPCS(int2 outid : SV_DispatchThreadID)\n"
+"void CNFPCS(int3 outid : SV_DispatchThreadID)\n"
 "{\n"
 "   int outwid = gWidHei.x / gfilWid_filStep.y;\n"
 "   int outhei = gWidHei.y / gfilWid_filStep.y;\n"
+"   uint detecInd = outid.z;\n"
+"   uint InDetecInd = gWidHei.x * gWidHei.y * gWidHei.z * detecInd;\n"
+"   uint OutDetecInd = outwid * outhei * gWidHei.z * detecInd;\n"
 "   int ox = outid.x;\n"
 "   int oy = outid.y % outhei;\n"
 "   int ix = ox * gfilWid_filStep.y;\n"
@@ -50,11 +53,11 @@ char *ShaderConvolution =
 "      int fy = (i / gfilWid_filStep.x) - padding;\n"
 "      if(iy + fy >= 0 && iy + fy < gWidHei.y && ix + fx >= 0 && ix + fx < gWidHei.x)\n"//Padding領域はスキップ
 "      {\n"
-"         tmp += gInput[inStInd + gWidHei.x * (iy + fy) + (ix + fx)] * gFilter[filStInd + i];\n"
+"         tmp += gInput[InDetecInd + inStInd + gWidHei.x * (iy + fy) + (ix + fx)] * gFilter[filStInd + i];\n"
 "      }\n"
 "   }\n"
 "   float sig = 1.0f / (1.0f + pow(2.71828182846, -tmp));\n"
-"   gOutput[outStInd + outwid * oy + ox] = sig;\n"
+"   gOutput[OutDetecInd + outStInd + outwid * oy + ox] = sig;\n"
 "}\n"
 
 //gOutErr初期化

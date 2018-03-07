@@ -42,17 +42,16 @@ protected:
 
 	UINT *NumNode = nullptr;//各層のノードの数
 	UINT *NumNodeStIndex = nullptr;//各層のスタートindex
-	UINT nodeNumAll = 0;//全数
 	UINT *NumWeight;//各層のweight数
 	UINT *NumWeightStIndex = nullptr;//各層のスタートindex
 	UINT weightNumAll = 0;//全数
-	UINT64 node_byteSize = 0;
 	UINT64 weight_byteSize = 0;
 	int Depth;
+	UINT detectionNum = 1;
 
 	DxNeuralNetwork() {}
 	void InputResourse();
-	void ForwardPropagation();
+	void ForwardPropagation(UINT detectionnum);
 	void InverseQuery();
 	void BackPropagation();
 	void CopyOutputResourse();
@@ -60,20 +59,20 @@ protected:
 	void CopyErrorResourse();
 
 public:
-	DxNeuralNetwork(UINT *numNode, int depth, UINT split);
+	DxNeuralNetwork(UINT *numNode, int depth, UINT split, UINT detectionnum = 1);
 	~DxNeuralNetwork();
 	void SetCommandList(int no);
 	void ComCreate();
 	void SetLearningLate(float rate);
 	void SetTarget(float *target);
 	void SetTargetEl(float el, UINT ElNum);
-	void FirstInput(float el, UINT ElNum);
-	void InputArray(float *inArr, UINT arrNum);
-	void InputArrayEl(float el, UINT arrNum, UINT ElNum);
+	void FirstInput(float el, UINT ElNum, UINT detectionInd = 0);
+	void InputArray(float *inArr, UINT arrNum, UINT detectionInd = 0);
+	void InputArrayEl(float el, UINT arrNum, UINT ElNum, UINT detectionInd = 0);
 	void Query();
 	void Training();
-	void GetOutput(float *out);
-	float GetOutputEl(UINT ElNum);
+	void GetOutput(float *out, UINT detectionInd = 0);
+	float GetOutputEl(UINT ElNum, UINT detectionInd = 0);
 	float *GetError(UINT arrNum);
 	float GetErrorEl(UINT arrNum, UINT ElNum);
 	void SetInputResource(ID3D12Resource *res);

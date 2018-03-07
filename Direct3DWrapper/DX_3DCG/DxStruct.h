@@ -268,12 +268,12 @@ struct CONSTANT_BUFFER_NeuralNetwork {
 
 //Pooling
 struct CONSTANT_BUFFER_Pooling {
-	VECTOR4 WidHei;//Width:x, Height:y
+	VECTOR4 WidHei;//Width:x, Height:y, MapPool:z
 };
 
 //Convolution
 struct CONSTANT_BUFFER_Convolution {
-	VECTOR4 WidHei;
+	VECTOR4 WidHei;//MaxFilNum:z
 	VECTOR4 filWid_filStep;
 	VECTOR4 Lear;
 };

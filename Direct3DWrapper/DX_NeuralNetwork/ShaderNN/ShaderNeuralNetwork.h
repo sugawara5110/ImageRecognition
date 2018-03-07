@@ -29,19 +29,21 @@ char *ShaderNeuralNetwork =
 //‡“`”À
 //o—Í‘¤‚ğ•À—ñˆ—,“ü—Í‘¤‚ğƒ‹[ƒv gLear_Depth.y = 0`Depth-2‚Ü‚Å
 "[numthreads(1, 1, 1)]\n"//Å‘åX * Y * Z = 1024
-"void NNFPCS(int2 outid : SV_DispatchThreadID)\n"
+"void NNFPCS(int3 outid : SV_DispatchThreadID)\n"
 "{\n"
 "   float WeightStartInd = gNumWeight[gLear_Depth.y].x;\n"
 "   float InNodeNum = gNumNode[gLear_Depth.y].x;\n"
+"   float OutNodeNum = gNumNode[gLear_Depth.y + 1].x;\n"
+"   int detecInd = outid.z;\n"
 
 "   float tmp = 0.0f;\n"
 "   int x = outid.x;\n"
 "   for(int i = 0; i < InNodeNum; i++)\n"
 "   {\n"
-"      tmp += gInNode[i] * gWeight[WeightStartInd + InNodeNum * x + i];\n"
+"      tmp += gInNode[InNodeNum * detecInd + i] * gWeight[WeightStartInd + InNodeNum * x + i];\n"
 "   }\n"
 "   float sig = 1.0f / (1.0f + pow(2.71828182846, -tmp));\n"
-"   gOutNode[x] = sig;\n"
+"   gOutNode[OutNodeNum * detecInd + x] = sig;\n"
 "}\n"
 
 //‹t“`”À‘OTarget’l“ü—Í gLear_Depth.y = Depth-1‚Ì‚İ

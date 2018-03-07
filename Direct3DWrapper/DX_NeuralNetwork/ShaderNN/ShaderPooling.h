@@ -27,24 +27,27 @@ char *ShaderPooling =
 //順伝搬
 //出力側を並列処理,入力側をループ
 "[numthreads(1, 1, 1)]\n"//最大X * Y * Z = 1024
-"void POFPCS(uint2 outid : SV_DispatchThreadID)\n"
+"void POFPCS(uint3 outid : SV_DispatchThreadID)\n"
 "{\n"
+"   uint detecInd = outid.z;\n"
+"   uint InDetecInd = gWidHei.x * gWidHei.y * gWidHei.z * detecInd;\n"
+"   uint OutDetecInd = (gWidHei.x / POOL) * (gWidHei.y / POOL) * gWidHei.z * detecInd;\n"
 "   uint ox = outid.x;\n"
 "   uint oy = outid.y;\n"
 "   uint ix = ox * POOL;\n"
 "   uint iy = oy * POOL;\n"
-"   float tmp = gInput[gWidHei.x * iy + ix];\n"
+"   float tmp = gInput[InDetecInd + gWidHei.x * iy + ix];\n"
 "   uint errx = 0;\n"
 "   uint erry = 0;\n"
 "   for(uint i = 1; i < POOL * POOL; i++)\n"
 "   {\n"
 "      uint px = i % POOL;\n"
 "      uint py = i / POOL;\n"
-"      float tmp2 = gInput[gWidHei.x * (iy + py) + (ix + px)];\n"
+"      float tmp2 = gInput[InDetecInd + gWidHei.x * (iy + py) + (ix + px)];\n"
 "      if(tmp < tmp2)\n"
 "      {\n"
 "         tmp = tmp2;\n"
-"         gOutErr[gWidHei.x * (iy + erry) + (ix + errx)] = 0.0f\;"
+"         gOutErr[gWidHei.x * (iy + erry) + (ix + errx)] = 0.0f;\n"
 "         gOutErr[gWidHei.x * (iy + py) + (ix + px)] = 1.0f;\n"
 "         errx = px;\n"
 "         erry = py;\n"
@@ -54,7 +57,7 @@ char *ShaderPooling =
 "         gOutErr[gWidHei.x * (iy + py) + (ix + px)] = 0.0f;\n"
 "      }\n"
 "   }\n"
-"   gOutput[(gWidHei.x / POOL) * oy + ox] = tmp / 2.0f;\n"//調整方法を考える
+"   gOutput[OutDetecInd + (gWidHei.x / POOL) * oy + ox] = tmp / 2.0f;\n"//調整方法を考える
 "}\n"
 
 //逆伝搬
