@@ -77,6 +77,7 @@ public:
 	float GetErrorEl(UINT arrNum, UINT ElNum);
 	void SetInputResource(ID3D12Resource *res);
 	ID3D12Resource *GetOutErrorResource();
+	ID3D12Resource *GetOutputResource();
 	void SaveData();
 	void LoadData();
 };

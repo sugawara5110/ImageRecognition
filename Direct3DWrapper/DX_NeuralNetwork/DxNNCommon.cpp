@@ -15,7 +15,7 @@ void DxNNCommon::CreareNNTexture(UINT width, UINT height, UINT num) {
 	uavHeapDesc.NumDescriptors = 1;
 	uavHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 	uavHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-	dx->md3dDevice->CreateDescriptorHeap(&uavHeapDesc, IID_PPV_ARGS(&mUavHeap));
+	dx->md3dDevice->CreateDescriptorHeap(&uavHeapDesc, IID_PPV_ARGS(&mUavHeap2));
 
 	D3D12_RESOURCE_DESC texDesc;
 	ZeroMemory(&texDesc, sizeof(D3D12_RESOURCE_DESC));
@@ -45,7 +45,7 @@ void DxNNCommon::CreareNNTexture(UINT width, UINT height, UINT num) {
 	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
 	uavDesc.Texture2D.MipSlice = 0;
 
-	CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mUavHeap->GetCPUDescriptorHandleForHeapStart());
+	CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mUavHeap2->GetCPUDescriptorHandleForHeapStart());
 	dx->md3dDevice->CreateUnorderedAccessView(mTextureBuffer.Get(), nullptr, &uavDesc, hDescriptor);
 
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mTextureBuffer.Get(),
@@ -77,13 +77,13 @@ void DxNNCommon::TextureCopy(ID3D12Resource *texture, int comNo) {
 	dx->Bigin(comNo);
 	mCommandList->SetPipelineState(mPSOCom2.Get());
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { mUavHeap.Get() };
+	ID3D12DescriptorHeap* descriptorHeaps[] = { mUavHeap2.Get() };
 	mCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
 	mCommandList->SetComputeRootSignature(mRootSignatureCom2.Get());
 
 	mCommandList->SetComputeRootUnorderedAccessView(0, texture->GetGPUVirtualAddress());
-	CD3DX12_GPU_DESCRIPTOR_HANDLE uav(mUavHeap->GetGPUDescriptorHandleForHeapStart());
+	CD3DX12_GPU_DESCRIPTOR_HANDLE uav(mUavHeap2->GetGPUDescriptorHandleForHeapStart());
 	mCommandList->SetComputeRootDescriptorTable(1, uav);
 	mCommandList->SetComputeRootConstantBufferView(2, mObjectCB2->Resource()->GetGPUVirtualAddress());
 	mCommandList->Dispatch(texWid, texHei, 1);

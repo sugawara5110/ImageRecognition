@@ -46,8 +46,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Control *control;
 	control = Control::GetInstance();
 	int learningImageNum = TextureLoader::GetLearningImageNum();
-	int testImageNum = TextureLoader::GetTestImageNum();
-	if (testImageNum > 16)testImageNum = 16;
 	float *target = TextureLoader::GetLearningTarget();
 
 	dx->Bigin(0);
@@ -67,7 +65,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	bool cancel = false;
 	bool drawOn = false;
 	float br0, br1, br2;
-	int testnum = 1;
 	int loopstep;
 	while (1) {//アプリ実行中ループ
 		if (!DispatchMSG(&msg))break;
@@ -108,19 +105,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 			if (enter) {
-
+				bool searchOn = true;
 				switch (select) {
 				case 0:
 					state = 1;
-					testnum = 1;
+					searchOn = false;
 					break;
 				case 1:
 					state = 2;
-					testnum = testImageNum;
 					break;
 				case 2:
 					state = 2;
-					testnum = 1;
 					camOn = true;
 					cam = new Camera();
 					break;
@@ -130,7 +125,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				input = new UINT[2];
 				input[0] = 200;
 				input[1] = 1;
-				nn = new ImageRecognition(64, 64, input, 2, 2, 'D', testnum);
+				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 2, 'D', searchOn);
 				dx->End(0);
 				dx->WaitFenceCurrent();
 				if (state == 2)nn->LoadData();
@@ -146,14 +141,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				else loopstep = 2;
 				for (int i = 0; i < 4; i += loopstep) {
 					nn->SetTargetEl(target[loop], 0);
-					nn->InputTexture(loop, i);
+					nn->LearningTexture(loop, i);
 					nn->Training();
 				}
 				loop++;
 				loop = loop % learningImageNum;
 				cnt++;
 			}
-			
+
 			if (cancel) {
 				cancel = false;
 				state = 0;
@@ -171,10 +166,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		case 2:
 			//検出
-			loop++;
-			loop = loop % testImageNum;
-			if (!camOn)
-				nn->InputTexture(learningImageNum + loop, 0);
+			if (!camOn) {
+				nn->searchPixel(learningImageNum);
+			}
 			else nn->InputPixel(cam->GetFrame(64, 64), 64, 64);
 			nn->Query();
 			if (cancel) {
@@ -200,14 +194,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			nn->NNDraw();
 			nn->PODraw();
 			nn->CNDraw();
-			if (!camOn) {
-				nn->INDraw(0.0f, 0.0f, 0.0f, 0.0f);
-				nn->textDraw(state, 0.0f, 0.0f);
-			}
-			else {
-				nn->INDraw(150.0f, -250.0f, 200.0f, 200.0f);
-				nn->textDraw(state, 150.0f, -200.0f);
-			}
+			nn->SPDraw();
+			nn->INDraw(0.0f, 0.0f, 0.0f, 0.0f);
+			nn->textDraw(state, 0.0f, 0.0f);
 		}
 		if (state == 1) {
 			DxText::GetInstance()->UpDateText(L"学習回数 ", 600.0f, 480.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });

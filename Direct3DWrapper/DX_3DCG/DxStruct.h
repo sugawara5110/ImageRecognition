@@ -283,4 +283,17 @@ struct NNCBTexture {
 	VECTOR4 Wid_Hei;
 };
 
+//SearchPixel
+struct CBSearchPixel {
+	VECTOR4 InWH_OutWH;
+	VECTOR4 seaWH_step;
+};
+
+struct SearchPixelData {
+	UINT stW;
+	UINT stH;
+	UINT enW;
+	UINT enH;
+};
+
 #endif

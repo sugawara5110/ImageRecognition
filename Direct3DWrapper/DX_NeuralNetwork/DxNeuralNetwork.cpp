@@ -472,6 +472,10 @@ ID3D12Resource *DxNeuralNetwork::GetOutErrorResource() {
 	return mErrorBuffer[0].Get();
 }
 
+ID3D12Resource *DxNeuralNetwork::GetOutputResource() {
+	return mNodeBuffer[Depth - 1].Get();
+}
+
 void DxNeuralNetwork::SaveData() {
 	FILE *fp = fopen("save/save.da", "wb");
 	float *weightArr = new float[weightNumAll];

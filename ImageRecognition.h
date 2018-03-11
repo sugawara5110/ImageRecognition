@@ -17,6 +17,12 @@ private:
 	DxNeuralNetwork *nn = nullptr;
 	DxPooling *po[2] = { nullptr };
 	DxConvolution *cn[2] = { nullptr };
+	UINT InW;
+	UINT InH;
+	SearchPixel *sp = nullptr;
+	float *spPix = nullptr;
+	PolygonData2D dsp[2];
+
 	UINT *numN = nullptr;
 	UINT Width; //入力画像サイズ
 	UINT Height;//入力画像サイズ
@@ -27,13 +33,12 @@ private:
 	UCHAR Type;//C:畳込みプーリングNN, P:プーリングNN, N:NNのみ, D:ディープ
 
 	PolygonData2D dnn, dpo[2], dcn[2];
-	PolygonData2D *din = nullptr;
+	PolygonData2D *din;
 	UINT ***pixIn = nullptr;
-	int *inTexNo = nullptr;
+	int TexNo = -1;
 	float *out = nullptr;
-	int TestImageNum = 1;
-	int testimInd = 0;
-	bool textDrawOn = false;
+	UINT SearchNum;
+	bool InTex = false;
 
 	void RunConvolutionToPooling(UINT ind);
 	void RunPoolingToConvolution();
@@ -48,10 +53,11 @@ private:
 	void queryDetec();
 
 public:
-	ImageRecognition(UINT width, UINT height, UINT *numNode, int depth, UINT filNum, UCHAR type, int testImageNum);
+	ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT *numNode, int depth, UINT filNum, UCHAR type, bool searchOn);
 	~ImageRecognition();
 	void SetTargetEl(float el, unsigned int Num);
-	void InputTexture(int Tno, int dir);
+	void LearningTexture(int Tno, int dir);
+	void searchPixel(int Tno);
 	void InputPixel(UINT **pix, UINT width, UINT height);
 	void Query();
 	void Training();
@@ -59,6 +65,7 @@ public:
 	void PODraw();
 	void CNDraw();
 	void INDraw(float x, float y, float xsize, float ysize);
+	void SPDraw();
 	void textDraw(UINT stateNum, float x, float y);
 	void SaveData();
 	void LoadData();

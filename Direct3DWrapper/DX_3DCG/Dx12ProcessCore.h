@@ -59,6 +59,7 @@ class DxNNCommon;
 class DxNeuralNetwork;
 class DxPooling;
 class DxConvolution;
+class SearchPixel;
 //ëOï˚êÈåæ
 
 class Dx12Process_sub final{
@@ -77,6 +78,7 @@ private:
 	friend DxNeuralNetwork;
 	friend DxPooling;
 	friend DxConvolution;
+	friend SearchPixel;
 
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> mCmdListAlloc[2];
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList> mCommandList;
@@ -104,6 +106,7 @@ private:
 	friend DxNeuralNetwork;
 	friend DxPooling;
 	friend DxConvolution;
+	friend SearchPixel;
 
 	Microsoft::WRL::ComPtr<IDXGIFactory4> mdxgiFactory;
 	Microsoft::WRL::ComPtr<ID3D12Device> md3dDevice;

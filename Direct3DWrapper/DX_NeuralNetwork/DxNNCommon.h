@@ -14,7 +14,7 @@ class DxNNCommon :public Common {
 protected:
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> mRootSignatureCom2 = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> mPSOCom2 = { nullptr };
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mUavHeap = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mUavHeap2 = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mTextureBuffer = nullptr;
 	NNCBTexture cb2;
 	UploadBuffer<NNCBTexture> *mObjectCB2 = nullptr;
