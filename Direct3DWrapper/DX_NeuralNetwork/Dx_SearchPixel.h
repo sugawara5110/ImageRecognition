@@ -53,7 +53,7 @@ protected:
 	SearchPixel() {}
 
 public:
-	SearchPixel(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, UINT step, UINT outNum);
+	SearchPixel(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, UINT step, UINT outNum, float Threshold);
 	~SearchPixel();
 	void SetCommandList(int no);
 	UINT GetSearchNum();

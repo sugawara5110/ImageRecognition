@@ -7,7 +7,7 @@
 #include "Dx_SearchPixel.h"
 #include "ShaderNN\ShaderSearchPixel.h"
 
-SearchPixel::SearchPixel(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, UINT step, UINT outnum) {
+SearchPixel::SearchPixel(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, UINT step, UINT outnum, float Threshold) {
 	Step = step;
 	srcWidth = srcwid;
 	srcHeight = srchei;
@@ -55,7 +55,8 @@ SearchPixel::SearchPixel(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, UIN
 
 	mObjectCB = new UploadBuffer<CBSearchPixel>(dx->md3dDevice.Get(), 1, true);
 	cb.InWH_OutWH.as(srcWidth, srcHeight, outWid, outHei);
-	cb.seaWH_step.as(seaWid, seaHei, Step, 0.0f);
+	cb.seaWH_step_PDNum.as(seaWid, seaHei, Step, searchNum);
+	cb.Threshold.x = Threshold;
 	mObjectCB->CopyData(0, cb);
 }
 

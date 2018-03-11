@@ -31,6 +31,7 @@ private:
 	int Depth;
 	UINT filNum = 1;
 	UCHAR Type;//C:畳込みプーリングNN, P:プーリングNN, N:NNのみ, D:ディープ
+	float Threshold;//閾値
 
 	PolygonData2D dnn, dpo[2], dcn[2];
 	PolygonData2D *din;
@@ -53,7 +54,7 @@ private:
 	void queryDetec();
 
 public:
-	ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT *numNode, int depth, UINT filNum, UCHAR type, bool searchOn);
+	ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT *numNode, int depth, UINT filNum, UCHAR type, bool searchOn, float Threshold);
 	~ImageRecognition();
 	void SetTargetEl(float el, unsigned int Num);
 	void LearningTexture(int Tno, int dir);

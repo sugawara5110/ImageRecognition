@@ -7,7 +7,7 @@
 #ifndef Class_DxNNCommon_Header
 #define Class_DxNNCommon_Header
 
-#include "../DX_3DCG/Dx12ProcessCore.h"
+#include "DxNNstruct.h"
 
 class DxNNCommon :public Common {
 

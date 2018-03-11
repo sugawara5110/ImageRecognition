@@ -7,16 +7,17 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "ImageRecognition.h"
 
-ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT *numNode, int depth, UINT filnum, UCHAR type, bool searchOn) {
+ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT *numNode, int depth, UINT filnum, UCHAR type, bool searchOn, float threshold) {
 
+	Threshold = threshold;
 	Width = width;
 	Height = height;
 	filNum = filnum;
 	Type = type;
 	InW = srcWid;
 	InH = srcHei;
-	
-	sp = new SearchPixel(InW, InH, Width, Height, 64, numNode[depth - 1]);
+
+	sp = new SearchPixel(InW, InH, Width, Height, 32, numNode[depth - 1], Threshold);
 	sp->ComCreate();
 	UINT spow = sp->GetOutWid();
 	UINT spoh = sp->GetOutHei();
@@ -419,10 +420,15 @@ void ImageRecognition::CNDraw() {
 
 void ImageRecognition::INDraw(float x, float y, float xsize, float ysize) {
 
+	UINT cnt = 0;
 	for (int i = 0; i < SearchNum; i++) {
-		din[i].Update(i * 52.0f + x, 548.0f + y, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 52.0f + xsize, 52.0f + ysize);
-		if (!InTex)
-			din[i].SetTextureMPixel(pixIn[i], 0xff, 0xff, 0xff, 255);
+		din[i].Update(cnt * 52.0f + x, 548.0f + y, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 52.0f + xsize, 52.0f + ysize);
+		if (!InTex) {
+			if (Threshold <= out[i]) {
+				din[i].SetTextureMPixel(pixIn[i], 0xff, 0xff, 0xff, 255);
+				cnt++;
+			}
+		}
 		else
 			din[i].CopyResource(GetTexture(TexNo), GetTextureStates());
 		din[i].Draw();
@@ -458,9 +464,13 @@ void ImageRecognition::textDraw(UINT stateNum, float x, float y) {
 		break;
 	case 2:
 		DxText::GetInstance()->UpDateText(L"èø‚Å‚ ‚éŠm—¦ ", 10.0f + x, 500.0f + y, 15.0f, { 0.0f, 1.0f, 0.0f, 1.0f });
+		UINT cnt = 0;
 		for (int i = 0; i < SearchNum; i++) {
-			DxText::GetInstance()->UpDateValue(out[i] * 100, 5.0f + i * 52.0f + x, 530.0f + y, 15.0f, 2, { 0.0f, 1.0f, 0.0f, 1.0f });
-			DxText::GetInstance()->UpDateText(L"%\ ", 30.0f + i * 52.0f + x, 530.0f + y, 15.0f, { 0.0f, 1.0f, 0.0f, 1.0f });
+			if (Threshold <= out[i]) {
+				DxText::GetInstance()->UpDateValue(out[i] * 100, 5.0f + cnt * 52.0f + x, 530.0f + y, 15.0f, 2, { 0.0f, 1.0f, 0.0f, 1.0f });
+				DxText::GetInstance()->UpDateText(L"%\ ", 30.0f + cnt * 52.0f + x, 530.0f + y, 15.0f, { 0.0f, 1.0f, 0.0f, 1.0f });
+				cnt++;
+			}
 		}
 		break;
 	}

@@ -125,7 +125,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				input = new UINT[2];
 				input[0] = 200;
 				input[1] = 1;
-				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 2, 'D', searchOn);
+				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 2, 'D', searchOn, 0.7f);
 				dx->End(0);
 				dx->WaitFenceCurrent();
 				if (state == 2)nn->LoadData();
@@ -161,7 +161,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 			DxText::GetInstance()->UpDateText(L"メニューに戻る場合はDelete", 550.0f, 500.0f, 15.0f, { 0.3f, 1.0f, 0.3f, 1.0f });
-			DxText::GetInstance()->UpDateText(L"顔画像検出AI実験中 ", 100.0f, 300.0f, 60.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+			DxText::GetInstance()->UpDateText(L"顔画像検出AI実験中 ", 100.0f, 400.0f, 60.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 			drawOn = true;
 			break;
 		case 2:
@@ -183,7 +183,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 			DxText::GetInstance()->UpDateText(L"メニューに戻る場合はDelete", 550.0f, 500.0f, 15.0f, { 0.3f, 1.0f, 0.3f, 1.0f });
-			DxText::GetInstance()->UpDateText(L"顔画像検出AI実験中 ", 100.0f, 300.0f, 60.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+			DxText::GetInstance()->UpDateText(L"顔画像検出AI実験中 ", 100.0f, 400.0f, 60.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 			drawOn = true;
 			break;
 		}
