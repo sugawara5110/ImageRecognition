@@ -107,3 +107,7 @@ Camera::Camera() {
 UINT **Camera::GetFrame(int width, int height) {
 	return getframe(width, height);
 }
+
+BYTE *Camera::GetFrame1(int width, int height) {
+	return getframe1(width, height);
+}

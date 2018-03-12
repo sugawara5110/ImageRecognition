@@ -177,7 +177,7 @@ void SearchPixel::ComCreate() {
 	texDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
 	texDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
-	//RWTexture2D—p
+	//RWTexture2D—pgInputCol
 	dx->md3dDevice->CreateCommittedResource(
 		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT),
 		D3D12_HEAP_FLAG_NONE,
@@ -185,6 +185,35 @@ void SearchPixel::ComCreate() {
 		D3D12_RESOURCE_STATE_COMMON,
 		nullptr,
 		IID_PPV_ARGS(&mInputColBuffer));
+
+	UINT64 uploadBufferSize = GetRequiredIntermediateSize(mInputColBuffer.Get(), 0, 1);
+	D3D12_HEAP_PROPERTIES HeapPropsUp;
+	HeapPropsUp.Type = D3D12_HEAP_TYPE_UPLOAD;
+	HeapPropsUp.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	HeapPropsUp.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	HeapPropsUp.CreationNodeMask = 1;
+	HeapPropsUp.VisibleNodeMask = 1;
+
+	D3D12_RESOURCE_DESC BufferDesc;
+	BufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	BufferDesc.Alignment = 0;
+	BufferDesc.Width = uploadBufferSize;
+	BufferDesc.Height = 1;
+	BufferDesc.DepthOrArraySize = 1;
+	BufferDesc.MipLevels = 1;
+	BufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+	BufferDesc.SampleDesc.Count = 1;
+	BufferDesc.SampleDesc.Quality = 0;
+	BufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	BufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	//up—pgInputCol
+	dx->md3dDevice->CreateCommittedResource(
+		&HeapPropsUp, 
+		D3D12_HEAP_FLAG_NONE,
+		&BufferDesc, 
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
+		IID_PPV_ARGS(&mInputColUpBuffer));
 
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 	uavDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -243,7 +272,7 @@ void SearchPixel::SetPixel(float *pi) {
 	memcpy(srcPix, pi, insize);
 	D3D12_SUBRESOURCE_DATA subResourceData = {};
 	subResourceData.pData = srcPix;
-	subResourceData.RowPitch = searchNum;
+	subResourceData.RowPitch = srcWidth * srcHeight;
 	subResourceData.SlicePitch = subResourceData.RowPitch;
 
 	dx->Bigin(com_no);
@@ -267,6 +296,22 @@ void SearchPixel::SetPixel3ch(ID3D12Resource *pi) {
 
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(pi,
 		D3D12_RESOURCE_STATE_COPY_SOURCE, D3D12_RESOURCE_STATE_GENERIC_READ));
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mInputColBuffer.Get(),
+		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+	dx->End(com_no);
+	dx->WaitFenceCurrent();
+}
+
+void SearchPixel::SetPixel3ch(BYTE *pi) {
+	D3D12_SUBRESOURCE_DATA subResourceData = {};
+	subResourceData.pData = pi;
+	subResourceData.RowPitch = srcWidth * 4;
+	subResourceData.SlicePitch = subResourceData.RowPitch;
+
+	dx->Bigin(com_no);
+	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mInputColBuffer.Get(),
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_DEST));
+	UpdateSubresources(mCommandList, mInputColBuffer.Get(), mInputColUpBuffer.Get(), 0, 0, 1, &subResourceData);
 	mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mInputColBuffer.Get(),
 		D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
 	dx->End(com_no);

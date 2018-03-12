@@ -361,24 +361,35 @@ void ImageRecognition::searchPixel(int Tno) {
 	InTex = false;
 }
 
-void ImageRecognition::InputPixel(UINT **pix, UINT width, UINT height) {
+void ImageRecognition::InputPixel(BYTE *pix) {
 
-	for (UINT j = 0; j < height; j++) {
-		for (UINT i = 0; i < width; i++) {
-			UINT pt = ((pix[j][i] >> 16 & 0xff) + (pix[j][i] >> 8 & 0xff) + (pix[j][i] & 0xff)) / 3;
-			float el = ((float)(255.0f - pt) / 255.0f * 0.99f) + 0.01f;
-			UINT ind = width * j + i;
-			pixIn[0][j][i] = pix[j][i];
+	for (UINT i = 0; i < InW * InH; i++) {
+		BYTE tmp = (pix[i * 4] + pix[i * 4 + 1] + pix[i * 4 + 2]) / 3;
+		spPix[i] = ((float)tmp / 255.0f * 0.99f) + 0.01f;
+	}
+
+	sp->SetPixel3ch(pix);
+	sp->SetPixel(spPix);
+	sp->SeparationTexture();
+	UINT seaNum = sp->GetSearchNum();
+
+	UINT cnt = 0;
+	for (UINT k = 0; k < seaNum; k++) {
+		for (UINT i = 0; i < Width * Height; i++) {
+			float el = sp->GetOutputEl(cnt++);
+			UINT pixX = i % Width;
+			UINT pixY = i / Width;
+			pixIn[k][pixY][pixX] = ((UINT)(el * 255.0f) << 16) + ((UINT)(el * 255.0f) << 8) + ((UINT)(el * 255.0f));
 			switch (Type) {
 			case 'C':
 			case 'D':
-				cn[0]->FirstInput(el, ind);
+				cn[0]->FirstInput(el, i, k);
 				break;
 			case 'P':
-				po[0]->FirstInput(el, ind);
+				po[0]->FirstInput(el, i, k);
 				break;
 			case 'N':
-				nn->FirstInput(el, ind);
+				nn->FirstInput(el, i, k);
 				break;
 			}
 		}

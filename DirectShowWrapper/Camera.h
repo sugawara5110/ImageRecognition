@@ -20,6 +20,7 @@ private:
 public:
 	Camera();
 	UINT **GetFrame(int width, int height);
+	BYTE *GetFrame1(int width, int height);
 };
 
 #endif

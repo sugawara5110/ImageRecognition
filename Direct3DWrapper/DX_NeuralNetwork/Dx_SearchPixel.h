@@ -27,6 +27,7 @@ protected:
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> mUavHeap = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mNNOutputBuffer = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> mInputColUpBuffer = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> mInputColBuffer = nullptr;
 
 	Microsoft::WRL::ComPtr<ID3DBlob> pCS[2] = { nullptr };
@@ -60,6 +61,7 @@ public:
 	void ComCreate();
 	void SetPixel(float *pi);
 	void SetPixel3ch(ID3D12Resource *pi);
+	void SetPixel3ch(BYTE *pi);
 	void SetNNoutput(ID3D12Resource *in);
 	void SeparationTexture();
 	void TextureDraw();

@@ -59,7 +59,7 @@ public:
 	void SetTargetEl(float el, unsigned int Num);
 	void LearningTexture(int Tno, int dir);
 	void searchPixel(int Tno);
-	void InputPixel(UINT **pix, UINT width, UINT height);
+	void InputPixel(BYTE *pix);
 	void Query();
 	void Training();
 	void NNDraw();

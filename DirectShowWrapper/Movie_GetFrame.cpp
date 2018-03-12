@@ -99,6 +99,35 @@ UINT **Movie::getframe(int width, int height) {
 	return m_pix;
 }
 
+BYTE *Movie::getframe1(int width, int height) {
+	hei = height;
+	wid = width;
+	//最新画像データをpBufferに格納
+	pSampleGrabber->GetCurrentBuffer(&nBufferSize, (long *)(pBuffer));
+
+	int pitch = 4;
+	int Width = wid * pitch;
+	if (pix1 == nullptr) {
+		pix1 = new BYTE[hei * Width];
+	}
+
+	//フレームサイズ
+	xs = pVideoInfoHeader->bmiHeader.biWidth;
+	ys = pVideoInfoHeader->bmiHeader.biHeight;
+	for (int j = 0; j < hei; j++) {
+		for (int i = 0; i < wid; i++) {
+			int offset = (j * ys / hei) * linesize + (i * xs / wid) * 3;
+
+			int i1 = i * pitch;
+			pix1[Width * (hei - j - 1) + i1 + 2] = pBuffer[offset + 0];
+			pix1[Width * (hei - j - 1) + i1 + 1] = pBuffer[offset + 1];
+			pix1[Width * (hei - j - 1) + i1 + 0] = pBuffer[offset + 2];
+			pix1[Width * (hei - j - 1) + i1 + 3] = 255;
+		}
+	}
+	return pix1;
+}
+
 UINT **Movie::GetFrame(int width, int height) {
 
 	//再生速度1.0標準 有効範囲0.1～4.0 
@@ -113,15 +142,34 @@ UINT **Movie::GetFrame(int width, int height) {
 	return getframe(width, height);
 }
 
-Movie::~Movie(){
+BYTE *Movie::GetFrame1(int width, int height) {
 
-	if (m_pix != NULL){
+	//再生速度1.0標準 有効範囲0.1～4.0 
+	pMediaPosition->put_Rate(1.0);
+
+	//ストリームの合計時間幅を基準とする、現在の位置を取得する。
+	pMediaPosition->get_CurrentPosition(&time1);
+
+	//現位置と終了位置が同じ場合スタート位置にセット
+	if (time1 == time2)pMediaPosition->put_CurrentPosition(0);
+
+	return getframe1(width, height);
+}
+
+Movie::~Movie() {
+
+	if (m_pix != NULL) {
 		for (int i = 0; i < hei; i++)free(m_pix[i]);
 		free(m_pix);
 		m_pix = NULL;
 	}
 
-	if (pBuffer != NULL){
+	if (pix1) {
+		delete[] pix1;
+		pix1 = nullptr;
+	}
+
+	if (pBuffer != NULL) {
 		free(pBuffer);//メモリ解放
 		pBuffer = NULL;
 	}

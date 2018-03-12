@@ -20,13 +20,16 @@ protected:
 	int xs, ys;    //画像サイズ
 	int wid, hei; //格納時画像サイズ 
 	UINT **m_pix = NULL; //受け渡し用ピクセルデータ(1要素1ピクセル)
+	BYTE *pix1 = nullptr;
 
 	UINT **getframe(int width, int height);
+	BYTE *getframe1(int width, int height);
 
 public:
 	Movie() {}
 	Movie(char *fileName);//デコード後のファイルネーム
 	UINT **GetFrame(int width, int height);
+	BYTE *GetFrame1(int width, int height);
 	virtual ~Movie();
 };
 

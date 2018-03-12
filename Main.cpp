@@ -169,7 +169,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			if (!camOn) {
 				nn->searchPixel(learningImageNum);
 			}
-			else nn->InputPixel(cam->GetFrame(64, 64), 64, 64);
+			else nn->InputPixel(cam->GetFrame1(512, 256));
 			nn->Query();
 			if (cancel) {
 				cancel = false;
