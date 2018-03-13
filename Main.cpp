@@ -39,6 +39,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	dx = Dx12Process::GetInstance();
 	dx->Initialize(hWnd);
 	Camera *cam = nullptr;
+	//test
+	//Movie mov("aaa.avi");
 	bool camOn = false;
 	DxText::InstanceCreate();
 	text = DxText::GetInstance();

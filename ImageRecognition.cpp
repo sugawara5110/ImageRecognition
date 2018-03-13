@@ -284,7 +284,7 @@ void ImageRecognition::LearningTexture(int Tno, int dir) {
 		for (int i = 0; i < width; i++) {
 			unsigned int ptexI = i * 4 + j1;
 			unsigned int pt = (ptex[ptexI + 0] + ptex[ptexI + 1] + ptex[ptexI + 2]) / 3;
-			float el = ((float)(255.0f - pt) / 255.0f * 0.99f) + 0.01f;
+			float el = ((float)pt / 255.0f * 0.99f) + 0.01f;
 			UINT ind = 0;
 
 			UINT i2 = (UINT)(((float)Width / width) * (float)i);
