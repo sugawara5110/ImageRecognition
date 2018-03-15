@@ -13,7 +13,7 @@ char *ShaderConvolution =
 "{\n"
 "    float4 gWidHei;\n"
 "    float4 gfilWid_filStep;\n"
-"    float4 gLear;\n"
+"    float4 gLear_Sigstren;\n"//学習率:x, 信号補正:y, 信号強度:z
 "};\n"
 
 //Dispatch(APP側)(X1, Y1, Z1)numthreads(CS側)(X, Y, Z)
@@ -56,8 +56,7 @@ char *ShaderConvolution =
 "         tmp += gInput[InDetecInd + inStInd + gWidHei.x * (iy + fy) + (ix + fx)] * gFilter[filStInd + i];\n"
 "      }\n"
 "   }\n"
-"   float sig = 1.0f / (1.0f + pow(2.71828182846, -tmp));\n"
-"   gOutput[OutDetecInd + outStInd + outwid * oy + ox] = sig;\n"
+"   gOutput[OutDetecInd + outStInd + outwid * oy + ox] = max(0, (tmp / filElNum + gLear_Sigstren.y) * gLear_Sigstren.z);\n"
 "}\n"
 
 //gOutErr初期化
@@ -130,7 +129,7 @@ char *ShaderConvolution =
 "                gInput[inStInd + gWidHei.x * Iy + Ix];\n"
 "      }\n"
 "   }\n"
-"   gFilter[filStInd + gfilWid_filStep.x * fily + filx] += tmp * gLear.x;\n"
+"   gFilter[filStInd + gfilWid_filStep.x * fily + filx] += tmp * gLear_Sigstren.x;\n"
 "}\n";
 
 

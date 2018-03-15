@@ -72,7 +72,7 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 		dpo[0].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 	}
 	if (Type == 'D') {
-		cn[1] = new DxConvolution(wid, hei, filNum, SearchNum, 5, 1);
+		cn[1] = new DxConvolution(wid, hei, filNum, SearchNum, 3, 1);
 		cn[1]->ComCreate();
 		wid = cn[1]->GetOutWidth();
 		hei = cn[1]->GetOutHeight();

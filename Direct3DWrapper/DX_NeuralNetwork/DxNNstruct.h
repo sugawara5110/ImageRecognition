@@ -26,7 +26,7 @@ struct CONSTANT_BUFFER_Pooling {
 struct CONSTANT_BUFFER_Convolution {
 	VECTOR4 WidHei;//MaxFilNum:z
 	VECTOR4 filWid_filStep;
-	VECTOR4 Lear;
+	VECTOR4 Lear_Sigstren;//学習率:x, 信号補正:y, 信号強度:z
 };
 
 //NN用textureコピー

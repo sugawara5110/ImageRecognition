@@ -12,6 +12,14 @@ void DxConvolution::SetLearningLate(float rate) {
 	learningRate = rate;
 }
 
+void DxConvolution::SetSignalcorrection(float sig) {
+	Signalcorrection = sig;
+}
+
+void DxConvolution::SetSignalstrength(float sig) {
+	Signalstrength = sig;
+}
+
 DxConvolution::DxConvolution(UINT width, UINT height, UINT filNum, UINT detectionnum, UINT elnumwid, UINT filstep) {
 
 	detectionNum = detectionnum;
@@ -239,7 +247,9 @@ void DxConvolution::InputError(float *inArr, UINT arrNum) {
 }
 
 void DxConvolution::ForwardPropagation(UINT detectionnum) {
-	cb.Lear.x = learningRate;
+	cb.Lear_Sigstren.x = learningRate;
+	cb.Lear_Sigstren.y = Signalcorrection;
+	cb.Lear_Sigstren.z = Signalstrength;
 	mObjectCB->CopyData(0, cb);
 	dx->Bigin(com_no);
 	mCommandList->SetPipelineState(mPSOCom[0].Get());

@@ -62,6 +62,8 @@ protected:
 	float *outputError = nullptr;
 
 	float learningRate = 0.1f;
+	float Signalstrength = 1.0f;
+	float Signalcorrection = 0.5f;
 
 	DxConvolution() {}
 	void ForwardPropagation(UINT detectionmum);
@@ -87,6 +89,8 @@ public:
 	void Training();
 	void Detection();
 	void SetLearningLate(float rate);
+	void SetSignalcorrection(float sig);
+	void SetSignalstrength(float sig);
 	void FirstInput(float el, UINT ElNum, UINT detectionInd = 0);
 	void Input(float *inArr, UINT arrNum, UINT detectionInd = 0);
 	void InputEl(float el, UINT arrNum, UINT ElNum, UINT detectionInd = 0);

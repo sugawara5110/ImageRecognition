@@ -57,7 +57,7 @@ char *ShaderPooling =
 "         gOutErr[gWidHei.x * (iy + py) + (ix + px)] = 0.0f;\n"
 "      }\n"
 "   }\n"
-"   gOutput[OutDetecInd + (gWidHei.x / POOL) * oy + ox] = tmp / 2.0f;\n"//’²®•û–@‚ğl‚¦‚é
+"   gOutput[OutDetecInd + (gWidHei.x / POOL) * oy + ox] = tmp;\n"
 "}\n"
 
 //‹t“`”À
