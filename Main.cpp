@@ -57,8 +57,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	UINT *input = nullptr;
 	ImageRecognition *nn = nullptr;;
-
-	int loop = 0;
 	int cnt = 0;
 
 	UINT state = 0;//0:タイトル, 1:学習モード, 2:検出モード
@@ -67,7 +65,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	bool cancel = false;
 	bool drawOn = false;
 	float br0, br1, br2;
-	int loopstep;
+	float threshold = 0.0f;
 	while (1) {//アプリ実行中ループ
 		if (!DispatchMSG(&msg))break;
 		Directionkey key = control->Direction();
@@ -106,20 +104,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				br2 = 1.0f;
 				break;
 			}
+
 			if (enter) {
 				bool searchOn = true;
 				switch (select) {
 				case 0:
 					state = 1;
 					searchOn = false;
+					threshold = 0.0f;
 					break;
 				case 1:
 					state = 2;
+					threshold = 0.7f;
 					break;
 				case 2:
 					state = 2;
 					camOn = true;
 					cam = new Camera();
+					threshold = 0.7f;
 					break;
 				}
 				enter = false;
@@ -127,7 +129,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				input = new UINT[2];
 				input[0] = 200;
 				input[1] = 1;
-				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 2, 'D', searchOn, 0.7f);
+				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 3, 'D', searchOn, threshold);
+				nn->SetTarget(target);
+				nn->SetLearningNum(learningImageNum);
 				dx->End(0);
 				dx->WaitFenceCurrent();
 				if (state == 2)nn->LoadData();
@@ -138,16 +142,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		case 1:
 			//学習
-			if (cnt < learningImageNum * 2) {
-				if (target[loop] == 0.01f)loopstep = 1;
-				else loopstep = 2;
-				for (int i = 0; i < 4; i += loopstep) {
-					nn->SetTargetEl(target[loop], 0);
-					nn->LearningTexture(loop, i);
-					nn->Training();
-				}
-				loop++;
-				loop = loop % learningImageNum;
+			if (cnt < 1000) {
+				nn->LearningTexture();
+				nn->Training();
 				cnt++;
 			}
 
@@ -158,7 +155,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				ARR_DELETE(input);
 				S_DELETE(nn);
 				drawOn = false;
-				loop = 0;
 				cnt = 0;
 				break;
 			}
@@ -181,7 +177,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				S_DELETE(cam);
 				camOn = false;
 				drawOn = false;
-				loop = 0;
+				cnt = 0;
 				break;
 			}
 			DxText::GetInstance()->UpDateText(L"メニューに戻る場合はDelete", 550.0f, 500.0f, 15.0f, { 0.3f, 1.0f, 0.3f, 1.0f });

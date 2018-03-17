@@ -39,7 +39,11 @@ private:
 	int TexNo = -1;
 	float *out = nullptr;
 	UINT SearchNum;
-	bool InTex = false;
+	UINT learTexNum = 0;
+	UINT learTexInd = 0;
+	UINT *learTexsepInd = nullptr;
+	UINT *learTexsepNum = nullptr;
+	float *target = nullptr;
 
 	void RunConvolutionToPooling(UINT ind);
 	void RunPoolingToConvolution();
@@ -56,8 +60,9 @@ private:
 public:
 	ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT *numNode, int depth, UINT filNum, UCHAR type, bool searchOn, float Threshold);
 	~ImageRecognition();
-	void SetTargetEl(float el, unsigned int Num);
-	void LearningTexture(int Tno, int dir);
+	void SetTarget(float *tar);
+	void SetLearningNum(UINT num);
+	void LearningTexture();
 	void searchPixel(int Tno);
 	void InputPixel(BYTE *pix);
 	void Query();

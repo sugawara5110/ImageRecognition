@@ -6,6 +6,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 #include "ImageRecognition.h"
+#define LEARTEXWID 64
 
 ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT *numNode, int depth, UINT filnum, UCHAR type, bool searchOn, float threshold) {
 
@@ -157,10 +158,12 @@ ImageRecognition::~ImageRecognition() {
 	SIN_DELETE(cn[1]);
 	ARR_DELETE(din);
 	ARR_DELETE(out);
+	ARR_DELETE(learTexsepNum);
+	ARR_DELETE(learTexsepInd);
 }
 
-void ImageRecognition::SetTargetEl(float el, unsigned int Num) {
-	nn->SetTargetEl(el, Num);
+void ImageRecognition::SetTarget(float *tar) {
+	target = tar;
 }
 
 void ImageRecognition::query() {
@@ -264,62 +267,64 @@ void ImageRecognition::PoolingToConvolutionBackPropagation(UINT ind) {
 	cn[ind]->Training();
 }
 
-void ImageRecognition::LearningTexture(int Tno, int dir) {
+void ImageRecognition::SetLearningNum(UINT num) {
+	learTexNum = num;
+	learTexsepNum = new UINT[learTexNum];
+	learTexsepInd = new UINT[learTexNum];
+	for (UINT i = 0; i < learTexNum; i++) {
+		D3D12_RESOURCE_DESC texdesc = GetTexture(i)->GetDesc();
+		UINT width = texdesc.Width;
+		UINT height = texdesc.Height;
+		learTexsepNum[i] = (width / LEARTEXWID) * (height / LEARTEXWID);
+		learTexsepInd[i] = 0;
+	}
+}
 
-	D3D12_RESOURCE_DESC texdesc;
-	texdesc = GetTexture(Tno)->GetDesc();
-	//テクスチャの横サイズ取得
-	float width = (float)texdesc.Width;
-	//テクスチャの縦サイズ取得
-	float height = (float)texdesc.Height;
-	TexNo = Tno;
+void ImageRecognition::LearningTexture() {
+
 	D3D12_SUBRESOURCE_DATA texResource;
-
-	GetTextureUp(Tno)->Map(0, nullptr, reinterpret_cast<void**>(&texResource));
-
+	GetTextureUp(learTexInd)->Map(0, nullptr, reinterpret_cast<void**>(&texResource));
 	unsigned char *ptex = (unsigned char*)texResource.pData;
-
-	for (int j = 0; j < height; j++) {
-		unsigned int j1 = (unsigned int)((float)j * (width * 4.0f));//RowPitchデータの行ピッチ、行幅、または物理サイズ (バイト単位)
-		for (int i = 0; i < width; i++) {
-			unsigned int ptexI = i * 4 + j1;
-			unsigned int pt = (ptex[ptexI + 0] + ptex[ptexI + 1] + ptex[ptexI + 2]) / 3;
+	D3D12_RESOURCE_DESC texdesc = GetTexture(learTexInd)->GetDesc();
+	UINT Wid = texdesc.Width;
+	UINT Hei = texdesc.Height;
+	UINT sepW = Wid / LEARTEXWID;
+	UINT sepH = Hei / LEARTEXWID;
+	UINT pixWst = learTexsepInd[learTexInd] % sepW * LEARTEXWID;
+	UINT pixHst = learTexsepInd[learTexInd] / sepW * LEARTEXWID;
+	nn->SetTargetEl(target[learTexInd], 0);
+	for (int j = pixHst; j < LEARTEXWID + pixHst; j++) {
+		for (int i = pixWst; i < LEARTEXWID + pixWst; i++) {
+			UINT pixWidNum = Wid * 4;
+			UINT pInd = pixWidNum * j + i * 4;
+			UINT pt = (ptex[pInd + 0] + ptex[pInd + 1] + ptex[pInd + 2]) / 3;
+			pixIn[0][j - pixHst][i - pixWst] = ((UINT)ptex[pInd + 2] << 16) + ((UINT)ptex[pInd + 1] << 8) + ((UINT)ptex[pInd + 0]);
 			float el = ((float)pt / 255.0f * 0.99f) + 0.01f;
-			UINT ind = 0;
 
-			UINT i2 = (UINT)(((float)Width / width) * (float)i);
-			UINT j2 = (UINT)(((float)Height / height) * (float)j);
-
-			switch (dir) {
-			case 0:
-				ind = Width * j2 + i2;
-				break;
-			case 1:
-				ind = Width * (Height - 1 - j2) + i2;
-				break;
-			case 2:
-				ind = Width * j2 + (Width - 1 - i2);
-				break;
-			case 3:
-				ind = Width * (Height - 1 - j2) + (Width - 1 - i2);
-				break;
-			}
+			UINT nInd = LEARTEXWID * (j - pixHst) + (i - pixWst);
 			switch (Type) {
 			case 'C':
 			case 'D':
-				cn[0]->FirstInput(el, ind);
+				cn[0]->FirstInput(el, nInd);
 				break;
 			case 'P':
-				po[0]->FirstInput(el, ind);
+				po[0]->FirstInput(el, nInd);
 				break;
 			case 'N':
-				nn->FirstInput(el, ind);
+				nn->FirstInput(el, nInd);
 				break;
 			}
 		}
 	}
-	GetTextureUp(Tno)->Unmap(0, nullptr);
-	InTex = true;
+	GetTextureUp(learTexInd)->Unmap(0, nullptr);
+	learTexsepInd[learTexInd]++;
+	if (learTexsepInd[learTexInd] >= learTexsepNum[learTexInd]) {
+		learTexsepInd[learTexInd] = 0;
+	}
+	learTexInd++;
+	if (learTexInd >= learTexNum) {
+		learTexInd = 0;
+	}
 }
 
 void ImageRecognition::searchPixel(int Tno) {
@@ -358,7 +363,6 @@ void ImageRecognition::searchPixel(int Tno) {
 			}
 		}
 	}
-	InTex = false;
 }
 
 void ImageRecognition::InputPixel(BYTE *pix) {
@@ -394,7 +398,6 @@ void ImageRecognition::InputPixel(BYTE *pix) {
 			}
 		}
 	}
-	InTex = false;
 }
 
 void ImageRecognition::NNDraw() {
@@ -434,15 +437,11 @@ void ImageRecognition::INDraw(float x, float y, float xsize, float ysize) {
 	UINT cnt = 0;
 	for (int i = 0; i < SearchNum; i++) {
 		din[i].Update(cnt * 52.0f + x, 548.0f + y, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 52.0f + xsize, 52.0f + ysize);
-		if (!InTex) {
-			if (Threshold <= out[i]) {
-				din[i].SetTextureMPixel(pixIn[i], 0xff, 0xff, 0xff, 255);
-				cnt++;
-			}
+		if (SearchNum == 1 || Threshold <= out[i]) {
+			din[i].SetTextureMPixel(pixIn[i], 0xff, 0xff, 0xff, 255);
+			cnt++;
+			din[i].Draw();
 		}
-		else
-			din[i].CopyResource(GetTexture(TexNo), GetTextureStates());
-		din[i].Draw();
 	}
 }
 

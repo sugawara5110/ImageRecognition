@@ -5,8 +5,6 @@
 //*****************************************************************************************//
 
 #include "TextureLoader.h"
-#include <time.h>
-#include <stdlib.h>
 
 Texture *TextureLoader::tex = NULL;
 SearchFile *TextureLoader::sf = nullptr;
@@ -25,8 +23,8 @@ void TextureLoader::TextureDecode(char *Bpass, bool UpKeep) {
 
 void TextureLoader::TextureLoad() {
 
-	tex = new Texture[250];
-	target = new float[250];
+	tex = new Texture[20];
+	target = new float[20];
 	texNum = 0;
 
 	sf = new SearchFile(3);
@@ -47,20 +45,6 @@ void TextureLoader::TextureLoad() {
 			if (k == 2 && j == 0)learningImageNum = texNum;
 			texNum++;
 		}
-	}
-
-	srand((unsigned)time(NULL));
-	for (int i = 0; i < learningImageNum * 100; i++) {
-		int rnd1 = rand() % learningImageNum;
-		int rnd2 = rand() % learningImageNum;
-		Texture tmp;
-		float tmpf;
-		tmp = tex[rnd1];
-		tmpf = target[rnd1];
-		tex[rnd1] = tex[rnd2];
-		target[rnd1] = target[rnd2];
-		tex[rnd2] = tmp;
-		target[rnd2] = tmpf;
 	}
 
 	Dx12Process::GetInstance()->SetTextureBinary(tex, texNum);
