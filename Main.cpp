@@ -4,12 +4,12 @@
 //**                                                                                     **//
 //*****************************************************************************************//
 
-#include "Win.h"
-#include "./Direct3DWrapper/Dx12Process.h"
-#include "./Direct3DWrapper/DxText.h"
+#include "../../../Common/Window/Win.h"
+#include "../../../Common/Direct3DWrapper/Dx12Process.h"
+#include "../../../Common/Direct3DWrapper/DxText.h"
 #include "ImageRecognition.h"
 #include "TextureLoader.h"
-#include "DirectShowWrapper\Camera.h"
+#include "../../../Common/DirectShowWrapper\Camera.h"
 #pragma comment(lib,"winmm.lib")
 
 //-------------------------------------------------------------
@@ -31,7 +31,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//文字入力
 	DxText *text;
 
-	Createwindow(&hWnd, hInstance, nCmdShow);
+	Createwindow(&hWnd, hInstance, nCmdShow, 800, 600, L"ImageDetection");
 
 	//Dx12Processオブジェクト生成
 	Dx12Process::InstanceCreate();
@@ -115,13 +115,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					break;
 				case 1:
 					state = 2;
-					threshold = 0.7f;
+					threshold = 0.99f;
 					break;
 				case 2:
 					state = 2;
 					camOn = true;
 					cam = new Camera();
-					threshold = 0.7f;
+					threshold = 0.99f;
 					break;
 				}
 				enter = false;
@@ -129,7 +129,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				input = new UINT[2];
 				input[0] = 200;
 				input[1] = 1;
-				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 3, 'D', searchOn, threshold);
+				nn = new ImageRecognition(512, 320, 64, 64, input, 2, 4, 'D', searchOn, threshold);
 				nn->SetTarget(target);
 				nn->SetLearningNum(learningImageNum);
 				dx->End(0);
@@ -142,7 +142,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		case 1:
 			//学習
-			if (cnt < 1000) {
+			if (cnt < 3000) {
 				nn->LearningTexture();
 				nn->Training();
 				cnt++;
@@ -167,7 +167,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			if (!camOn) {
 				nn->searchPixel(learningImageNum);
 			}
-			else nn->InputPixel(cam->GetFrame1(512, 256));
+			else nn->InputPixel(cam->GetFrame1(512, 320));
 			nn->Query();
 			if (cancel) {
 				cancel = false;

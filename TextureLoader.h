@@ -7,8 +7,8 @@
 #ifndef Class_TextureLoader_Header
 #define Class_TextureLoader_Header
 
-#include "./Direct3DWrapper/Dx12Process.h"
-#include "SearchFile\SearchFile.h"
+#include "../../../Common/Direct3DWrapper/Dx12Process.h"
+#include "../../../Common/SearchFile\SearchFile.h"
 
 class TextureLoader {
 

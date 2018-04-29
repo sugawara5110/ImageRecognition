@@ -23,8 +23,8 @@ void TextureLoader::TextureDecode(char *Bpass, bool UpKeep) {
 
 void TextureLoader::TextureLoad() {
 
-	tex = new Texture[20];
-	target = new float[20];
+	tex = new Texture[60];
+	target = new float[60];
 	texNum = 0;
 
 	sf = new SearchFile(3);

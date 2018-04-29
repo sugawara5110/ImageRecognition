@@ -4,12 +4,8 @@
 //**                                                                                     **//
 //*****************************************************************************************//
 
-#include "NeuralNetwork\NeuralNetwork.h"
-#include "NeuralNetwork\Pooling.h"
-#include "NeuralNetwork\ConvolutionNN.h"
-#include "Direct3DWrapper\Dx12Process.h"
-#include "Direct3DWrapper/DxText.h"
-#include "Direct3DWrapper\Dx_NN.h"
+#include "../../../Common/Direct3DWrapper/Dx_NN.h"
+#include "../../../Common/Direct3DWrapper/DxText.h"
 
 class ImageRecognition : public PolygonData2D {
 
@@ -38,7 +34,10 @@ private:
 	UINT ***pixIn = nullptr;
 	int TexNo = -1;
 	float *out = nullptr;
-	UINT SearchNum;
+	UINT SearchMaxNum, SearchNum;
+	bool *Searchflg = nullptr;
+	int *SearchOutInd = nullptr;
+	UINT Search10cnt = 0;
 	UINT learTexNum = 0;
 	UINT learTexInd = 0;
 	UINT *learTexsepInd = nullptr;
