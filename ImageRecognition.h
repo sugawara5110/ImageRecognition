@@ -7,17 +7,32 @@
 #include "../../../Common/Direct3DWrapper/Dx_NN.h"
 #include "../../../Common/Direct3DWrapper/DxText.h"
 
+class SP {
+
+public:
+	SearchPixel * Sp = nullptr;
+	float *spPix = nullptr;
+	PolygonData2D dsp[2];
+	UINT SearchMaxNum;
+	UINT  SearchNum;
+	bool *Searchflg = nullptr;
+	int *SearchOutInd = nullptr;
+	UINT Search10cnt = 0;
+
+	SP(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, float outscale, UINT step, UINT outNum, float Threshold, bool searchOn);
+	~SP();
+};
+
 class ImageRecognition : public PolygonData2D {
 
 private:
-	DxNeuralNetwork *nn = nullptr;
+	DxNeuralNetwork * nn = nullptr;
 	DxPooling *po[2] = { nullptr };
 	DxConvolution *cn[2] = { nullptr };
+	SP *sp[3] = { nullptr };
+	UINT spInd = 0;
 	UINT InW;
 	UINT InH;
-	SearchPixel *sp = nullptr;
-	float *spPix = nullptr;
-	PolygonData2D dsp[2];
 
 	UINT *numN = nullptr;
 	UINT Width; //“ü—Í‰æ‘œƒTƒCƒY
@@ -34,10 +49,8 @@ private:
 	UINT ***pixIn = nullptr;
 	int TexNo = -1;
 	float *out = nullptr;
-	UINT SearchMaxNum, SearchNum;
-	bool *Searchflg = nullptr;
-	int *SearchOutInd = nullptr;
-	UINT Search10cnt = 0;
+	UINT SearchMaxNum;
+
 	UINT learTexNum = 0;
 	UINT learTexInd = 0;
 	UINT *learTexsepInd = nullptr;
@@ -55,6 +68,7 @@ private:
 	void PoolingToConvolutionBackPropagation(UINT ind);
 	void query();
 	void queryDetec();
+	void searchPixel();
 
 public:
 	ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT *numNode, int depth, UINT filNum, UCHAR type, bool searchOn, float Threshold);
@@ -62,7 +76,7 @@ public:
 	void SetTarget(float *tar);
 	void SetLearningNum(UINT num);
 	void LearningTexture();
-	void searchPixel(int Tno);
+	void InputTexture(int Tno);
 	void InputPixel(BYTE *pix);
 	void Query();
 	void Training();

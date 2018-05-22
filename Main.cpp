@@ -165,7 +165,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		case 2:
 			//ŒŸo
 			if (!camOn) {
-				nn->searchPixel(learningImageNum);
+				nn->InputTexture(learningImageNum);
 			}
 			else nn->InputPixel(cam->GetFrame1(512, 320));
 			nn->Query();
