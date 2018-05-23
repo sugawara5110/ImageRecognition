@@ -24,6 +24,7 @@ SP::SP(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, float outscale, UINT 
 		SearchOutInd[i] = i;
 	}
 
+	out = new float[SearchMaxNum];
 	spPix = new float[srcwid * srchei];
 	Sp->CreareNNTexture(spow, spoh, 1);
 	dsp[0].SetCommandList(0);
@@ -41,6 +42,7 @@ SP::SP(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, float outscale, UINT 
 SP::~SP() {
 	ARR_DELETE(spPix);
 	S_DELETE(Sp);
+	ARR_DELETE(out);
 	ARR_DELETE(Searchflg);
 	ARR_DELETE(SearchOutInd);
 }
@@ -59,21 +61,20 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	sp[1] = new SP(InW, InH, Width * 1.5, Height * 1.5, 0.67f, 24, numNode[depth - 1], Threshold, searchOn);
 	sp[2] = new SP(InW, InH, Width * 2, Height * 2, 0.5f, 32, numNode[depth - 1], Threshold, searchOn);
 
-	SearchMaxNum = sp[spInd]->SearchMaxNum;
-	out = new float[SearchMaxNum];
+	SearchMaxNum = sp[0]->SearchMaxNum;
 
 	unsigned int wid = Width;
 	unsigned int hei = Height;
 	if (Type == 'C' || Type == 'D') {
-		cn[0] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 7, 1);
+		cn[0] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 5, 2);
 		cn[0]->ComCreate();
 		wid = cn[0]->GetOutWidth();
 		hei = cn[0]->GetOutHeight();
-		cn[0]->CreareNNTexture(7, 7, filNum);
+		cn[0]->CreareNNTexture(5, 5, filNum);
 
 		dcn[0].SetCommandList(0);
 		dcn[0].GetVBarray2D(1);
-		dcn[0].TextureInit(7, 7 * filNum);
+		dcn[0].TextureInit(5, 5 * filNum);
 		dcn[0].TexOn();
 		dcn[0].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 	}
@@ -97,15 +98,15 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 		dpo[0].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 	}
 	if (Type == 'D') {
-		cn[1] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 5, 1);
+		cn[1] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 3, 1);
 		cn[1]->ComCreate();
 		wid = cn[1]->GetOutWidth();
 		hei = cn[1]->GetOutHeight();
-		cn[1]->CreareNNTexture(5, 5, filNum);
+		cn[1]->CreareNNTexture(3, 3, filNum);
 
 		dcn[1].SetCommandList(0);
 		dcn[1].GetVBarray2D(1);
-		dcn[1].TextureInit(5, 5 * filNum);
+		dcn[1].TextureInit(3, 3 * filNum);
 		dcn[1].TexOn();
 		dcn[1].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 
@@ -181,7 +182,6 @@ ImageRecognition::~ImageRecognition() {
 	S_DELETE(sp[1]);
 	S_DELETE(sp[2]);
 	ARR_DELETE(din);
-	ARR_DELETE(out);
 	ARR_DELETE(learTexsepNum);
 	ARR_DELETE(learTexsepInd);
 }
@@ -225,20 +225,19 @@ void ImageRecognition::Query() {
 	UINT cnt = 0;
 	for (int i = 0; i < sp[spInd]->SearchMaxNum; i++) {
 		if (sp[spInd]->SearchOutInd[i] == -1)continue;
-		out[i] = nn->GetOutputEl(0, cnt);
-		if (out[i] < Threshold)sp[spInd]->Searchflg[i] = false;
+		sp[spInd]->out[i] = nn->GetOutputEl(0, cnt);
+		if (sp[spInd]->out[i] < Threshold)sp[spInd]->Searchflg[i] = false;
 		cnt++;
 	}
 
-	sp[spInd]->Sp->SetNNoutput(out);
+	sp[spInd]->Sp->SetNNoutput(sp[spInd]->out);
 	sp[spInd]->Sp->TextureDraw();
+
 	sp[spInd]->Search10cnt++;
 	if (sp[spInd]->Search10cnt > 5) {
 		for (int i = 0; i < sp[spInd]->SearchMaxNum; i++)sp[spInd]->Searchflg[i] = true;
 		sp[spInd]->Search10cnt = 0;
 	}
-	spInd++;
-	if (spInd > 2)spInd = 0;
 }
 
 void ImageRecognition::Training() {
@@ -406,7 +405,8 @@ void ImageRecognition::searchPixel() {
 }
 
 void ImageRecognition::InputTexture(int Tno) {
-
+	spInd++;
+	if (spInd > 2)spInd = 0;
 	D3D12_SUBRESOURCE_DATA texResource;
 	GetTextureUp(Tno)->Map(0, nullptr, reinterpret_cast<void**>(&texResource));
 	UCHAR *ptex = (UCHAR*)texResource.pData;
@@ -421,7 +421,8 @@ void ImageRecognition::InputTexture(int Tno) {
 }
 
 void ImageRecognition::InputPixel(BYTE *pix) {
-
+	spInd++;
+	if (spInd > 2)spInd = 0;
 	for (UINT i = 0; i < InW * InH; i++) {
 		BYTE tmp = (pix[i * 4] + pix[i * 4 + 1] + pix[i * 4 + 2]) / 3;
 		sp[spInd]->spPix[i] = ((float)tmp / 255.0f * 0.99f) + 0.01f;
@@ -466,9 +467,9 @@ void ImageRecognition::CNDraw() {
 void ImageRecognition::INDraw(float x, float y, float xsize, float ysize) {
 
 	UINT cnt = 0;
-	for (int i = 0; i < SearchMaxNum; i++) {
+	for (int i = 0; i < sp[spInd]->SearchMaxNum; i++) {
 		din[i].Update(cnt * 52.0f + x, 548.0f + y, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 52.0f + xsize, 52.0f + ysize);
-		if (SearchMaxNum == 1 || Threshold <= out[i]) {
+		if (sp[spInd]->SearchMaxNum == 1 || Threshold <= sp[spInd]->out[i]) {
 			din[i].SetTextureMPixel(pixIn[i], 0xff, 0xff, 0xff, 255);
 			cnt++;
 			din[i].Draw();
@@ -519,10 +520,10 @@ void ImageRecognition::textDraw(UINT stateNum, float x, float y) {
 	case 2:
 		DxText::GetInstance()->UpDateText(L"èø‚Å‚ ‚éŠm—¦ ", 10.0f + x, 500.0f + y, 15.0f, { 0.0f, 1.0f, 0.0f, 1.0f });
 		UINT cnt = 0;
-		for (int i = 0; i < SearchMaxNum && cnt < 16; i++) {
-			if (Threshold <= out[i]) {
-				DxText::GetInstance()->UpDateValue(out[i] * 100, 5.0f + cnt * 52.0f + x, 530.0f + y, 15.0f, 3, { 0.0f, 1.0f, 0.0f, 1.0f });
-				DxText::GetInstance()->UpDateText(L"%\ ", 35.0f + cnt * 52.0f + x, 530.0f + y, 15.0f, { 0.0f, 1.0f, 0.0f, 1.0f });
+		for (int i = 0; i < sp[spInd]->SearchMaxNum && cnt < 16; i++) {
+			if (Threshold <= sp[spInd]->out[i]) {
+				DxText::GetInstance()->UpDateValue(sp[spInd]->out[i] * 100, cnt * 52.0f + x, 530.0f + y, 15.0f, 3, { 0.0f, 1.0f, 0.0f, 1.0f });
+				DxText::GetInstance()->UpDateText(L"%\ ", 40.0f + cnt * 52.0f + x, 530.0f + y, 15.0f, { 0.0f, 1.0f, 0.0f, 1.0f });
 				cnt++;
 			}
 		}

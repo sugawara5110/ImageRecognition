@@ -18,6 +18,7 @@ public:
 	bool *Searchflg = nullptr;
 	int *SearchOutInd = nullptr;
 	UINT Search10cnt = 0;
+	float *out = nullptr;
 
 	SP(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, float outscale, UINT step, UINT outNum, float Threshold, bool searchOn);
 	~SP();
@@ -48,7 +49,6 @@ private:
 	PolygonData2D *din;
 	UINT ***pixIn = nullptr;
 	int TexNo = -1;
-	float *out = nullptr;
 	UINT SearchMaxNum;
 
 	UINT learTexNum = 0;

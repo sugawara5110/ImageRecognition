@@ -142,7 +142,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		case 1:
 			//äwèK
-			if (cnt < 3000) {
+			if (cnt < 6000) {
 				nn->LearningTexture();
 				nn->Training();
 				cnt++;
