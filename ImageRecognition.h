@@ -55,6 +55,13 @@ private:
 	UINT learTexInd = 0;
 	UINT *learTexsepInd = nullptr;
 	UINT *learTexsepNum = nullptr;
+	UINT positivef = 0;
+	UINT posInd = 0;
+	UINT negaInd = 0;
+	UINT posNum = 0;
+	UINT negaNum = 0;
+	UINT poscnt = 0;
+	UINT negacnt = 0;
 	float *target = nullptr;
 
 	void RunConvolutionToPooling(UINT ind);

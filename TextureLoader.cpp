@@ -10,6 +10,7 @@ Texture *TextureLoader::tex = NULL;
 SearchFile *TextureLoader::sf = nullptr;
 int TextureLoader::texNum = 0;
 int TextureLoader::learningImageNum = 0;
+int TextureLoader::learningCorrectFaceFirstInd = 0;
 float *TextureLoader::target = nullptr;
 
 void TextureLoader::TextureDecode(char *Bpass) {
@@ -42,6 +43,7 @@ void TextureLoader::TextureLoad() {
 			TextureDecode(sf->GetFileName(k, j));
 			if (k == 0)target[tarCnt++] = 0.01f;
 			if (k == 1)target[tarCnt++] = 0.99f;
+			if (k == 1 && j == 0)learningCorrectFaceFirstInd = texNum;
 			if (k == 2 && j == 0)learningImageNum = texNum;
 			texNum++;
 		}
@@ -66,4 +68,8 @@ float *TextureLoader::GetLearningTarget() {
 
 int TextureLoader::GetTestImageNum() {
 	return texNum - learningImageNum;
+}
+
+int TextureLoader::GetlearningCorrectFaceFirstInd() {
+	return learningCorrectFaceFirstInd;
 }

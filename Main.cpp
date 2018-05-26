@@ -66,6 +66,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	bool drawOn = false;
 	float br0, br1, br2;
 	float threshold = 0.0f;
+	UINT testNum = 0;
+	UINT testCnt = 0;
 	while (1) {//アプリ実行中ループ
 		if (!DispatchMSG(&msg))break;
 		Directionkey key = control->Direction();
@@ -129,7 +131,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				input = new UINT[2];
 				input[0] = 200;
 				input[1] = 1;
-				nn = new ImageRecognition(512, 320, 64, 64, input, 2, 4, 'D', searchOn, threshold);
+				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 4, 'D', searchOn, threshold);
 				nn->SetTarget(target);
 				nn->SetLearningNum(learningImageNum);
 				dx->End(0);
@@ -142,7 +144,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		case 1:
 			//学習
-			if (cnt < 6000) {
+			if (cnt < 5000) {
 				nn->LearningTexture();
 				nn->Training();
 				cnt++;
@@ -158,16 +160,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				cnt = 0;
 				break;
 			}
-			DxText::GetInstance()->UpDateText(L"メニューに戻る場合はDelete", 550.0f, 500.0f, 15.0f, { 0.3f, 1.0f, 0.3f, 1.0f });
-			DxText::GetInstance()->UpDateText(L"顔画像検出AI実験中 ", 100.0f, 400.0f, 60.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+			DxText::GetInstance()->UpDateText(L"メニューに戻る場合はDelete", 550.0f, 550.0f, 15.0f, { 0.3f, 1.0f, 0.3f, 1.0f });
+			DxText::GetInstance()->UpDateText(L"顔画像検出AI実験中 ", 100.0f, 370.0f, 60.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 			drawOn = true;
 			break;
 		case 2:
 			//検出
 			if (!camOn) {
-				nn->InputTexture(learningImageNum);
+				nn->InputTexture(learningImageNum + testNum);
 			}
-			else nn->InputPixel(cam->GetFrame1(512, 320));
+			else nn->InputPixel(cam->GetFrame1(512, 256));
+
+			testCnt++;
+			if (testCnt > 20) {
+				testCnt = 0;
+				testNum++;
+			}
+			if (testNum >= TextureLoader::GetTestImageNum())testNum = 0;
 			nn->Query();
 			if (cancel) {
 				cancel = false;
@@ -197,8 +206,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			nn->textDraw(state, 0.0f, 0.0f);
 		}
 		if (state == 1) {
-			DxText::GetInstance()->UpDateText(L"学習回数 ", 600.0f, 480.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
-			DxText::GetInstance()->UpDateValue(cnt, 670.0f, 480, 15.0f, 5, { 1.0f, 1.0f, 1.0f, 1.0f });
+			DxText::GetInstance()->UpDateText(L"学習回数 ", 600.0f, 510.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+			DxText::GetInstance()->UpDateValue(cnt, 670.0f, 510, 15.0f, 5, { 1.0f, 1.0f, 1.0f, 1.0f });
 		}
 		text->UpDate();
 		text->Draw(0);

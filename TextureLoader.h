@@ -17,6 +17,7 @@ private:
 	static SearchFile *sf;
 	static int texNum;
 	static int learningImageNum;
+	static int learningCorrectFaceFirstInd;
 	static float *target;
 
 	TextureLoader() {}
@@ -29,6 +30,7 @@ public:
 	static int GetLearningImageNum();
 	static float *GetLearningTarget();
 	static int GetTestImageNum();
+	static int GetlearningCorrectFaceFirstInd();
 };
 
 #endif

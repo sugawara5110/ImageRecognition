@@ -6,6 +6,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 #include "ImageRecognition.h"
+#include "TextureLoader.h"
 #define LEARTEXWID 64
 
 SP::SP(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, float outscale, UINT step, UINT outNum, float Threshold, bool searchOn) {
@@ -313,6 +314,12 @@ void ImageRecognition::SetLearningNum(UINT num) {
 		UINT height = texdesc.Height;
 		learTexsepNum[i] = (width / LEARTEXWID) * (height / LEARTEXWID);
 		learTexsepInd[i] = 0;
+		if (i < TextureLoader::GetlearningCorrectFaceFirstInd()) {
+			negaNum += learTexsepNum[i];
+		}
+		else {
+			posNum += learTexsepNum[i];
+		}
 	}
 }
 
@@ -357,20 +364,34 @@ void ImageRecognition::LearningTexture() {
 		}
 	}
 	GetTextureUp(learTexInd)->Unmap(0, nullptr);
+
 	learTexsepInd[learTexInd]++;
 	if (learTexsepInd[learTexInd] >= learTexsepNum[learTexInd]) {
 		learTexsepInd[learTexInd] = 0;
+
+		if (positivef == 0) {
+			if (++posInd + TextureLoader::GetlearningCorrectFaceFirstInd() >= TextureLoader::GetLearningImageNum())posInd = 0;
+		}
+		else {
+			if (++negaInd >= TextureLoader::GetlearningCorrectFaceFirstInd())negaInd = 0;
+		}
 	}
-	learTexInd++;
-	if (learTexInd >= learTexNum) {
-		learTexInd = 0;
+
+	if (++positivef > 2)positivef = 0;
+	if (positivef == 0) {
+		learTexInd = posInd + TextureLoader::GetlearningCorrectFaceFirstInd();
+		poscnt++;
+	}
+	else {
+		learTexInd = negaInd;
+		negacnt++;
 	}
 }
 
 void ImageRecognition::searchPixel() {
 	sp[spInd]->Sp->SetPixel(sp[spInd]->spPix);
 	sp[spInd]->Sp->SeparationTexture();
-	UINT seaNum = sp[spInd]->SearchNum;
+	UINT seaNum = sp[spInd]->SearchMaxNum;
 
 	UINT cnt = 0;
 	UINT seacnt = 0;
@@ -503,7 +524,7 @@ void ImageRecognition::textDraw(UINT stateNum, float x, float y) {
 	float tm1;
 	switch (stateNum) {
 	case 1:
-		DxText::GetInstance()->UpDateText(L"学習中出力 ", 600.0f, 460.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateText(L"学習中出力 ", 600.0f, 430.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 		tm1 = nn->GetOutputEl(0);
 		tm = tm1 * 100;
 		if (tm < 0 || tm > 100) {
@@ -515,7 +536,15 @@ void ImageRecognition::textDraw(UINT stateNum, float x, float y) {
 			sprintf(st2, "%f", tm1);
 			MessageBoxA(0, st2, 0, MB_OK);
 		}
-		DxText::GetInstance()->UpDateValue(tm, 710.0f, 460.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateValue(tm, 710.0f, 430.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateText(L"正解画像学習 ", 600.0f, 445.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateText(L"不正解画像学習 ", 600.0f, 460.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateValue(poscnt, 750.0f, 445.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateValue(negacnt, 750.0f, 460.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateText(L"正解画像数 ", 600.0f, 475.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateText(L"不正解画像数 ", 600.0f, 490.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateValue(posNum, 750.0f, 475.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateValue(negaNum, 750.0f, 490.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
 		break;
 	case 2:
 		DxText::GetInstance()->UpDateText(L"顏である確率 ", 10.0f + x, 500.0f + y, 15.0f, { 0.0f, 1.0f, 0.0f, 1.0f });
