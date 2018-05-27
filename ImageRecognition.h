@@ -28,8 +28,8 @@ class ImageRecognition : public PolygonData2D {
 
 private:
 	DxNeuralNetwork * nn = nullptr;
-	DxPooling *po[2] = { nullptr };
-	DxConvolution *cn[2] = { nullptr };
+	DxPooling *po[3] = { nullptr };
+	DxConvolution *cn[3] = { nullptr };
 	SP *sp[3] = { nullptr };
 	UINT spInd = 0;
 	UINT InW;
@@ -42,10 +42,10 @@ private:
 	UINT nnHeight;
 	int Depth;
 	UINT filNum = 1;
-	UCHAR Type;//C:畳込みプーリングNN, P:プーリングNN, N:NNのみ, D:ディープ
+	UCHAR Type;//C:畳込みプーリングNN, P:プーリングNN, N:NNのみ, D:ディープ, S
 	float Threshold;//閾値
 
-	PolygonData2D dnn, dpo[2], dcn[2];
+	PolygonData2D dnn, dpo[3], dcn[3];
 	PolygonData2D *din;
 	UINT ***pixIn = nullptr;
 	int TexNo = -1;
@@ -65,13 +65,13 @@ private:
 	float *target = nullptr;
 
 	void RunConvolutionToPooling(UINT ind);
-	void RunPoolingToConvolution();
+	void RunPoolingToConvolution(UINT ind);
 	void RunPoolingToNN(UINT ind);
 	void RunConvolutionToPoolingDetec(UINT ind);
-	void RunPoolingToConvolutionDetec();
+	void RunPoolingToConvolutionDetec(UINT ind);
 	void RunPoolingToNNDetec(UINT ind);
 	void NNToPoolingBackPropagation(UINT ind);
-	void ConvolutionToPoolingBackPropagation();
+	void ConvolutionToPoolingBackPropagation(UINT ind);
 	void PoolingToConvolutionBackPropagation(UINT ind);
 	void query();
 	void queryDetec();

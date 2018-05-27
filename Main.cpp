@@ -31,13 +31,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//文字入力
 	DxText *text;
 
-	Createwindow(&hWnd, hInstance, nCmdShow, 800, 600, L"ImageDetection");
+	Createwindow(&hWnd, hInstance, nCmdShow, 900, 600, L"ImageDetection");
 
 	//Dx12Processオブジェクト生成
 	Dx12Process::InstanceCreate();
 	//Dx11Processオブジェクト取得
 	dx = Dx12Process::GetInstance();
-	dx->Initialize(hWnd);
+	dx->Initialize(hWnd, 900, 600);
 	Camera *cam = nullptr;
 	//test
 	//Movie mov("aaa.avi");
@@ -131,7 +131,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				input = new UINT[2];
 				input[0] = 200;
 				input[1] = 1;
-				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 4, 'D', searchOn, threshold);
+				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 6, 'S', searchOn, threshold);
 				nn->SetTarget(target);
 				nn->SetLearningNum(learningImageNum);
 				dx->End(0);
@@ -144,7 +144,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		case 1:
 			//学習
-			if (cnt < 5000) {
+			if (cnt < 14000) {
 				nn->LearningTexture();
 				nn->Training();
 				cnt++;

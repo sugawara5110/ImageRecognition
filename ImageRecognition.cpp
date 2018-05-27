@@ -66,23 +66,24 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 
 	unsigned int wid = Width;
 	unsigned int hei = Height;
-	if (Type == 'C' || Type == 'D') {
-		cn[0] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 5, 2);
+	if (Type == 'C' || Type == 'D' || Type == 'S') {
+		cn[0] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 7, 2);
 		cn[0]->ComCreate();
+		cn[0]->SetLearningLate(0.01f);
 		wid = cn[0]->GetOutWidth();
 		hei = cn[0]->GetOutHeight();
-		cn[0]->CreareNNTexture(5, 5, filNum);
+		cn[0]->CreareNNTexture(7, 7, filNum);
 
 		dcn[0].SetCommandList(0);
 		dcn[0].GetVBarray2D(1);
-		dcn[0].TextureInit(5, 5 * filNum);
+		dcn[0].TextureInit(7, 7 * filNum);
 		dcn[0].TexOn();
 		dcn[0].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 	}
-	if (Type == 'C' || Type == 'P' || Type == 'D') {
+	if (Type == 'C' || Type == 'P' || Type == 'D' || Type == 'S') {
 		wid = Width;
 		hei = Height;
-		if (Type == 'C' || Type == 'D') {
+		if (Type == 'C' || Type == 'D' || Type == 'S') {
 			wid = cn[0]->GetOutWidth();
 			hei = cn[0]->GetOutHeight();
 		}
@@ -98,16 +99,17 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 		dpo[0].TexOn();
 		dpo[0].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 	}
-	if (Type == 'D') {
-		cn[1] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 3, 1);
+	if (Type == 'D' || Type == 'S') {
+		cn[1] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 5, 1);
 		cn[1]->ComCreate();
+		cn[1]->SetLearningLate(0.01f);
 		wid = cn[1]->GetOutWidth();
 		hei = cn[1]->GetOutHeight();
-		cn[1]->CreareNNTexture(3, 3, filNum);
+		cn[1]->CreareNNTexture(5, 5, filNum);
 
 		dcn[1].SetCommandList(0);
 		dcn[1].GetVBarray2D(1);
-		dcn[1].TextureInit(3, 3 * filNum);
+		dcn[1].TextureInit(5, 5 * filNum);
 		dcn[1].TexOn();
 		dcn[1].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 
@@ -124,11 +126,39 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 		dpo[1].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 	}
 
+	if (Type == 'S') {
+		cn[2] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 3, 1);
+		cn[2]->ComCreate();
+		cn[2]->SetLearningLate(0.01f);
+		wid = cn[2]->GetOutWidth();
+		hei = cn[2]->GetOutHeight();
+		cn[2]->CreareNNTexture(3, 3, filNum);
+
+		dcn[2].SetCommandList(0);
+		dcn[2].GetVBarray2D(1);
+		dcn[2].TextureInit(3, 3 * filNum);
+		dcn[2].TexOn();
+		dcn[2].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
+
+		po[2] = new DxPooling(wid, hei, filNum, SearchMaxNum);
+		po[2]->ComCreate();
+		wid = po[2]->GetOutWidth();
+		hei = po[2]->GetOutHeight();
+		po[2]->CreareNNTexture(wid, hei, filNum);
+
+		dpo[2].SetCommandList(0);
+		dpo[2].GetVBarray2D(1);
+		dpo[2].TextureInit(wid, hei * filNum);
+		dpo[2].TexOn();
+		dpo[2].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
+	}
+
 	numN = new UINT[depth + 1];
 	numN[0] = wid * hei;
 	for (int i = 1; i < depth + 1; i++)numN[i] = numNode[i - 1];
 	nn = new DxNeuralNetwork(numN, depth + 1, filNum, SearchMaxNum);
 	nn->ComCreate();
+	nn->SetLearningLate(0.01f);
 	nn->CreareNNTexture(wid, hei, filNum);
 
 	dnn.SetCommandList(0);
@@ -179,6 +209,8 @@ ImageRecognition::~ImageRecognition() {
 	S_DELETE(cn[0]);
 	S_DELETE(po[1]);
 	S_DELETE(cn[1]);
+	S_DELETE(po[2]);
+	S_DELETE(cn[2]);
 	S_DELETE(sp[0]);
 	S_DELETE(sp[1]);
 	S_DELETE(sp[2]);
@@ -199,9 +231,17 @@ void ImageRecognition::query() {
 		RunPoolingToNN(0);
 	}
 	if (Type == 'D') {
-		RunPoolingToConvolution();
+		RunPoolingToConvolution(0);
 		RunConvolutionToPooling(1);
 		RunPoolingToNN(1);
+	}
+	if (Type == 'S') {
+		RunConvolutionToPooling(0);
+		RunPoolingToConvolution(0);
+		RunConvolutionToPooling(1);
+		RunPoolingToConvolution(1);
+		RunConvolutionToPooling(2);
+		RunPoolingToNN(2);
 	}
 }
 
@@ -213,9 +253,17 @@ void ImageRecognition::queryDetec() {
 		RunPoolingToNNDetec(0);
 	}
 	if (Type == 'D') {
-		RunPoolingToConvolutionDetec();
+		RunPoolingToConvolutionDetec(0);
 		RunConvolutionToPoolingDetec(1);
 		RunPoolingToNNDetec(1);
+	}
+	if (Type == 'S') {
+		RunConvolutionToPoolingDetec(0);
+		RunPoolingToConvolutionDetec(0);
+		RunConvolutionToPoolingDetec(1);
+		RunPoolingToConvolutionDetec(1);
+		RunConvolutionToPoolingDetec(2);
+		RunPoolingToNNDetec(2);
 	}
 }
 
@@ -247,7 +295,7 @@ void ImageRecognition::Training() {
 	if (Type == 'D') {
 		NNToPoolingBackPropagation(1);
 		PoolingToConvolutionBackPropagation(1);
-		ConvolutionToPoolingBackPropagation();
+		ConvolutionToPoolingBackPropagation(0);
 		PoolingToConvolutionBackPropagation(0);
 	}
 	if (Type == 'P') {
@@ -257,6 +305,14 @@ void ImageRecognition::Training() {
 		NNToPoolingBackPropagation(0);
 		PoolingToConvolutionBackPropagation(0);
 	}
+	if (Type == 'S') {
+		NNToPoolingBackPropagation(2);
+		PoolingToConvolutionBackPropagation(2);
+		ConvolutionToPoolingBackPropagation(1);
+		PoolingToConvolutionBackPropagation(1);
+		ConvolutionToPoolingBackPropagation(0);
+		PoolingToConvolutionBackPropagation(0);
+	}
 }
 
 void ImageRecognition::RunConvolutionToPooling(UINT ind) {
@@ -264,9 +320,9 @@ void ImageRecognition::RunConvolutionToPooling(UINT ind) {
 	po[ind]->SetInputResource(cn[ind]->GetOutputResource());
 }
 
-void ImageRecognition::RunPoolingToConvolution() {
-	po[0]->Query();
-	cn[1]->SetInputResource(po[0]->GetOutputResource());
+void ImageRecognition::RunPoolingToConvolution(UINT ind) {
+	po[ind]->Query();
+	cn[ind + 1]->SetInputResource(po[ind]->GetOutputResource());
 }
 
 void ImageRecognition::RunPoolingToNN(UINT ind) {
@@ -279,9 +335,9 @@ void ImageRecognition::RunConvolutionToPoolingDetec(UINT ind) {
 	po[ind]->SetInputResource(cn[ind]->GetOutputResource());
 }
 
-void ImageRecognition::RunPoolingToConvolutionDetec() {
-	po[0]->Detection(sp[spInd]->SearchNum);
-	cn[1]->SetInputResource(po[0]->GetOutputResource());
+void ImageRecognition::RunPoolingToConvolutionDetec(UINT ind) {
+	po[ind]->Detection(sp[spInd]->SearchNum);
+	cn[ind + 1]->SetInputResource(po[ind]->GetOutputResource());
 }
 
 void ImageRecognition::RunPoolingToNNDetec(UINT ind) {
@@ -294,9 +350,9 @@ void ImageRecognition::NNToPoolingBackPropagation(UINT ind) {
 	po[ind]->Training();
 }
 
-void ImageRecognition::ConvolutionToPoolingBackPropagation() {
-	po[0]->SetInErrorResource(cn[1]->GetOutErrorResource());
-	po[0]->Training();
+void ImageRecognition::ConvolutionToPoolingBackPropagation(UINT ind) {
+	po[ind]->SetInErrorResource(cn[ind + 1]->GetOutErrorResource());
+	po[ind]->Training();
 }
 
 void ImageRecognition::PoolingToConvolutionBackPropagation(UINT ind) {
@@ -352,6 +408,7 @@ void ImageRecognition::LearningTexture() {
 			switch (Type) {
 			case 'C':
 			case 'D':
+			case 'S':
 				cn[0]->FirstInput(el, nInd);
 				break;
 			case 'P':
@@ -369,7 +426,7 @@ void ImageRecognition::LearningTexture() {
 	if (learTexsepInd[learTexInd] >= learTexsepNum[learTexInd]) {
 		learTexsepInd[learTexInd] = 0;
 
-		if (positivef == 0) {
+		if (positivef != 0) {
 			if (++posInd + TextureLoader::GetlearningCorrectFaceFirstInd() >= TextureLoader::GetLearningImageNum())posInd = 0;
 		}
 		else {
@@ -377,8 +434,8 @@ void ImageRecognition::LearningTexture() {
 		}
 	}
 
-	if (++positivef > 2)positivef = 0;
-	if (positivef == 0) {
+	if (++positivef > 1)positivef = 0;
+	if (positivef != 0) {
 		learTexInd = posInd + TextureLoader::GetlearningCorrectFaceFirstInd();
 		poscnt++;
 	}
@@ -410,6 +467,7 @@ void ImageRecognition::searchPixel() {
 			switch (Type) {
 			case 'C':
 			case 'D':
+			case 'S':
 				cn[0]->FirstInput(el, i, seacnt);
 				break;
 			case 'P':
@@ -454,34 +512,44 @@ void ImageRecognition::InputPixel(BYTE *pix) {
 }
 
 void ImageRecognition::NNDraw() {
-	dnn.Update(705.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
+	dnn.Update(735.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
 	dnn.CopyResource(nn->GetNNTextureResource(), nn->GetNNTextureResourceStates());
 	dnn.Draw();
 }
 
 void ImageRecognition::PODraw() {
-	if (Type == 'C' || Type == 'P' || Type == 'D') {
+	if (Type == 'C' || Type == 'P' || Type == 'D' || Type == 'S') {
 		dpo[0].Update(125.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
 		dpo[0].CopyResource(po[0]->GetNNTextureResource(), po[0]->GetNNTextureResourceStates());
 		dpo[0].Draw();
 	}
-	if (Type == 'D') {
+	if (Type == 'D' || Type == 'S') {
 		dpo[1].Update(365.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
 		dpo[1].CopyResource(po[1]->GetNNTextureResource(), po[1]->GetNNTextureResourceStates());
 		dpo[1].Draw();
 	}
+	if (Type == 'S') {
+		dpo[2].Update(605.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
+		dpo[2].CopyResource(po[2]->GetNNTextureResource(), po[2]->GetNNTextureResourceStates());
+		dpo[2].Draw();
+	}
 }
 
 void ImageRecognition::CNDraw() {
-	if (Type == 'C' || Type == 'D') {
+	if (Type == 'C' || Type == 'D' || Type == 'S') {
 		dcn[0].Update(5.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
 		dcn[0].CopyResource(cn[0]->GetNNTextureResource(), cn[0]->GetNNTextureResourceStates());
 		dcn[0].Draw();
 	}
-	if (Type == 'D') {
+	if (Type == 'D' || Type == 'S') {
 		dcn[1].Update(245.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
 		dcn[1].CopyResource(cn[1]->GetNNTextureResource(), cn[1]->GetNNTextureResourceStates());
 		dcn[1].Draw();
+	}
+	if (Type == 'S') {
+		dcn[2].Update(485.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
+		dcn[2].CopyResource(cn[2]->GetNNTextureResource(), cn[2]->GetNNTextureResourceStates());
+		dcn[2].Draw();
 	}
 }
 
@@ -514,10 +582,14 @@ void ImageRecognition::textDraw(UINT stateNum, float x, float y) {
 	DxText::GetInstance()->UpDateText(L"“ü—Í‰æ‘œ ", 10.0f, 480.0f, 15.0f, { 1.0f, 0.0f, 0.0f, 1.0f });
 	if (Type != 'P' && Type != 'N')DxText::GetInstance()->UpDateText(L"ôž‚Ý‘w", 0.0f, 7.0f, 15.0f, { 1.0f, 0.5f, 0.5f, 1.0f });
 	if (Type != 'N')DxText::GetInstance()->UpDateText(L"ƒv[ƒŠƒ“ƒO‘w", 100.0f, 7.0f, 15.0f, { 0.5f, 1.0f, 0.5f, 1.0f });
-	DxText::GetInstance()->UpDateText(L"‘SŒ‹‡‘w‹t•ûŒüo—Í ", 650.0f, 7.0f, 15.0f, { 0.5f, 0.5f, 1.0f, 1.0f });
-	if (Type == 'D') {
+	DxText::GetInstance()->UpDateText(L"‘SŒ‹‡‘w‹t•ûŒüo—Í ", 680.0f, 7.0f, 15.0f, { 0.5f, 0.5f, 1.0f, 1.0f });
+	if (Type == 'D' || Type == 'S') {
 		DxText::GetInstance()->UpDateText(L"ôž‚Ý‘w", 240.0f, 7.0f, 15.0f, { 1.0f, 0.5f, 0.5f, 1.0f });
 		DxText::GetInstance()->UpDateText(L"ƒv[ƒŠƒ“ƒO‘w", 340.0f, 7.0f, 15.0f, { 0.5f, 1.0f, 0.5f, 1.0f });
+	}
+	if (Type == 'S') {
+		DxText::GetInstance()->UpDateText(L"ôž‚Ý‘w", 480.0f, 7.0f, 15.0f, { 1.0f, 0.5f, 0.5f, 1.0f });
+		DxText::GetInstance()->UpDateText(L"ƒv[ƒŠƒ“ƒO‘w", 580.0f, 7.0f, 15.0f, { 0.5f, 1.0f, 0.5f, 1.0f });
 	}
 
 	int tm;
@@ -563,11 +635,13 @@ void ImageRecognition::textDraw(UINT stateNum, float x, float y) {
 void ImageRecognition::SaveData() {
 	if (cn[0])cn[0]->SaveData(0);
 	if (cn[1])cn[1]->SaveData(1);
+	if (cn[2])cn[2]->SaveData(2);
 	nn->SaveData();
 }
 
 void ImageRecognition::LoadData() {
 	if (cn[0])cn[0]->LoadData(0);
 	if (cn[1])cn[1]->LoadData(1);
+	if (cn[2])cn[2]->LoadData(2);
 	nn->LoadData();
 }
