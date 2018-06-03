@@ -67,9 +67,9 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	unsigned int wid = Width;
 	unsigned int hei = Height;
 	if (Type == 'C' || Type == 'D' || Type == 'S') {
-		cn[0] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 7, 2);
-		cn[0]->ComCreate();
-		cn[0]->SetLearningLate(0.01f);
+		cn[0] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 7, 1);
+		cn[0]->ComCreateSigmoid();
+		cn[0]->SetLearningLate(0.08f);
 		wid = cn[0]->GetOutWidth();
 		hei = cn[0]->GetOutHeight();
 		cn[0]->CreareNNTexture(7, 7, filNum);
@@ -101,8 +101,8 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	}
 	if (Type == 'D' || Type == 'S') {
 		cn[1] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 5, 1);
-		cn[1]->ComCreate();
-		cn[1]->SetLearningLate(0.01f);
+		cn[1]->ComCreateSigmoid();
+		cn[1]->SetLearningLate(0.08f);
 		wid = cn[1]->GetOutWidth();
 		hei = cn[1]->GetOutHeight();
 		cn[1]->CreareNNTexture(5, 5, filNum);
@@ -127,16 +127,16 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	}
 
 	if (Type == 'S') {
-		cn[2] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 3, 1);
-		cn[2]->ComCreate();
-		cn[2]->SetLearningLate(0.01f);
+		cn[2] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 5, 1);
+		cn[2]->ComCreateSigmoid();
+		cn[2]->SetLearningLate(0.08f);
 		wid = cn[2]->GetOutWidth();
 		hei = cn[2]->GetOutHeight();
-		cn[2]->CreareNNTexture(3, 3, filNum);
+		cn[2]->CreareNNTexture(5, 5, filNum);
 
 		dcn[2].SetCommandList(0);
 		dcn[2].GetVBarray2D(1);
-		dcn[2].TextureInit(3, 3 * filNum);
+		dcn[2].TextureInit(5, 5 * filNum);
 		dcn[2].TexOn();
 		dcn[2].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 
@@ -157,8 +157,8 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	numN[0] = wid * hei;
 	for (int i = 1; i < depth + 1; i++)numN[i] = numNode[i - 1];
 	nn = new DxNeuralNetwork(numN, depth + 1, filNum, SearchMaxNum);
-	nn->ComCreate();
-	nn->SetLearningLate(0.01f);
+	nn->ComCreateSigmoid();
+	nn->SetLearningLate(0.08f);
 	nn->CreareNNTexture(wid, hei, filNum);
 
 	dnn.SetCommandList(0);
@@ -283,7 +283,7 @@ void ImageRecognition::Query() {
 	sp[spInd]->Sp->TextureDraw();
 
 	sp[spInd]->Search10cnt++;
-	if (sp[spInd]->Search10cnt > 5) {
+	if (sp[spInd]->Search10cnt > 3) {
 		for (int i = 0; i < sp[spInd]->SearchMaxNum; i++)sp[spInd]->Searchflg[i] = true;
 		sp[spInd]->Search10cnt = 0;
 	}
@@ -426,7 +426,7 @@ void ImageRecognition::LearningTexture() {
 	if (learTexsepInd[learTexInd] >= learTexsepNum[learTexInd]) {
 		learTexsepInd[learTexInd] = 0;
 
-		if (positivef != 0) {
+		if (positivef == 0) {
 			if (++posInd + TextureLoader::GetlearningCorrectFaceFirstInd() >= TextureLoader::GetLearningImageNum())posInd = 0;
 		}
 		else {
@@ -435,7 +435,7 @@ void ImageRecognition::LearningTexture() {
 	}
 
 	if (++positivef > 1)positivef = 0;
-	if (positivef != 0) {
+	if (positivef == 0) {
 		learTexInd = posInd + TextureLoader::GetlearningCorrectFaceFirstInd();
 		poscnt++;
 	}

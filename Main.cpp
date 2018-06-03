@@ -117,7 +117,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					break;
 				case 1:
 					state = 2;
-					threshold = 0.99f;
+					threshold = 0.79f;
 					break;
 				case 2:
 					state = 2;
@@ -131,7 +131,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				input = new UINT[2];
 				input[0] = 200;
 				input[1] = 1;
-				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 6, 'S', searchOn, threshold);
+				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 8, 'D', searchOn, threshold);
 				nn->SetTarget(target);
 				nn->SetLearningNum(learningImageNum);
 				dx->End(0);
@@ -144,7 +144,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		case 1:
 			//äwèK
-			if (cnt < 14000) {
+			if (cnt < 10000) {
 				nn->LearningTexture();
 				nn->Training();
 				cnt++;
