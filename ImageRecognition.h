@@ -4,6 +4,9 @@
 //**                                                                                     **//
 //*****************************************************************************************//
 
+#ifndef Class_ImageRecognition_Header
+#define Class_ImageRecognition_Header
+
 #include "../../../Common/Direct3DWrapper/Dx_NN.h"
 #include "../../../Common/Direct3DWrapper/DxText.h"
 
@@ -63,6 +66,9 @@ private:
 	UINT poscnt = 0;
 	UINT negacnt = 0;
 	float *target = nullptr;
+	float currentTarget = 0.0f;
+	int errer = 0;
+	int currout = 0;
 
 	void RunConvolutionToPooling(UINT ind);
 	void RunPoolingToConvolution(UINT ind);
@@ -86,14 +92,19 @@ public:
 	void InputTexture(int Tno);
 	void InputPixel(BYTE *pix);
 	void Query();
+	void LearningDecay(float in);
 	void Training();
 	void NNDraw();
 	void PODraw();
 	void CNDraw();
 	void INDraw(float x, float y, float xsize, float ysize);
 	void SPDraw();
+	int Geterrer();
+	int Getcurrout();
+	float Getcurrtar();
 	void textDraw(UINT stateNum, float x, float y);
 	void SaveData();
 	void LoadData();
 };
 
+#endif

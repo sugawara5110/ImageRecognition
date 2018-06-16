@@ -10,6 +10,7 @@
 #include "ImageRecognition.h"
 #include "TextureLoader.h"
 #include "../../../Common/DirectShowWrapper\Camera.h"
+#include "Graph.h"
 #pragma comment(lib,"winmm.lib")
 
 //-------------------------------------------------------------
@@ -58,7 +59,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UINT *input = nullptr;
 	ImageRecognition *nn = nullptr;;
 	int cnt = 0;
-
+	Graph *graph = nullptr;
 	UINT state = 0;//0:タイトル, 1:学習モード, 2:検出モード
 	UINT select = 0;
 	bool enter = false;
@@ -117,7 +118,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					break;
 				case 1:
 					state = 2;
-					threshold = 0.79f;
+					threshold = 0.9f;
 					break;
 				case 2:
 					state = 2;
@@ -131,9 +132,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				input = new UINT[2];
 				input[0] = 300;
 				input[1] = 1;
-				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 8, 'S', searchOn, threshold);
+				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 8, 'D', searchOn, threshold);
 				nn->SetTarget(target);
 				nn->SetLearningNum(learningImageNum);
+				if (state == 1) {
+					graph = new Graph();
+					graph->CreateGraph(100, 218, 256, 128, 256, 256);
+				}
 				dx->End(0);
 				dx->WaitFenceCurrent();
 				if (state == 2)nn->LoadData();
@@ -144,8 +149,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		case 1:
 			//学習
-			if (cnt < 20000) {
+			if (cnt < 320000) {
 				nn->LearningTexture();
+				nn->LearningDecay((float)cnt / 320000.0f);
 				nn->Training();
 				cnt++;
 			}
@@ -156,12 +162,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				nn->SaveData();
 				ARR_DELETE(input);
 				S_DELETE(nn);
+				S_DELETE(graph);
 				drawOn = false;
 				cnt = 0;
 				break;
 			}
 			DxText::GetInstance()->UpDateText(L"メニューに戻る場合はDelete", 550.0f, 550.0f, 15.0f, { 0.3f, 1.0f, 0.3f, 1.0f });
-			DxText::GetInstance()->UpDateText(L"顔画像検出AI実験中 ", 100.0f, 370.0f, 60.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+			DxText::GetInstance()->UpDateText(L"顔画像検出AI実験中 ", 100.0f, 340.0f, 60.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 			drawOn = true;
 			break;
 		case 2:
@@ -183,6 +190,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				state = 0;
 				ARR_DELETE(input);
 				S_DELETE(nn);
+				S_DELETE(graph);
 				S_DELETE(cam);
 				camOn = false;
 				drawOn = false;
@@ -204,6 +212,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			nn->SPDraw();
 			nn->INDraw(0.0f, 0.0f, 0.0f, 0.0f);
 			nn->textDraw(state, 0.0f, 0.0f);
+			if (state == 1) {
+				float tmw = (float)cnt / 320000.0f * 255.0f;
+				float tmh = (float)nn->Getcurrout() / 100.0f * 255.0f;
+				if (nn->Getcurrtar() >= 0.5f)
+					graph->SetData((int)tmw, (int)tmh, 0xffffffff);
+				else graph->SetData((int)tmw, (int)tmh, 0xff0000ff);
+				graph->Draw();
+			}
 		}
 		if (state == 1) {
 			DxText::GetInstance()->UpDateText(L"学習回数 ", 600.0f, 510.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
@@ -218,6 +234,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ARR_DELETE(input);
 	S_DELETE(nn);
 	S_DELETE(cam);
+	S_DELETE(graph);
 	TextureLoader::DeleteTextureStruct();
 	DxText::DeleteInstance();
 	Dx12Process::DeleteInstance();
