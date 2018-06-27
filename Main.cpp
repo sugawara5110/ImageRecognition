@@ -124,7 +124,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					state = 2;
 					camOn = true;
 					cam = new Camera();
-					threshold = 0.99f;
+					threshold = 0.9f;
 					break;
 				}
 				enter = false;
@@ -153,7 +153,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				nn->LearningTexture();
 				nn->LearningDecay((float)cnt / 320000.0f);
 				nn->Training();
-				cnt++;
+				cnt += 8;
 			}
 
 			if (cancel) {

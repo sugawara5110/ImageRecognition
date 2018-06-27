@@ -53,6 +53,7 @@ private:
 	UINT ***pixIn = nullptr;
 	int TexNo = -1;
 	UINT SearchMaxNum;
+	bool searchon;
 
 	UINT learTexNum = 0;
 	UINT learTexInd = 0;

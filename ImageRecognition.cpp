@@ -8,6 +8,7 @@
 #include "ImageRecognition.h"
 #include "TextureLoader.h"
 #define LEARTEXWID 64
+#define BADGENUM 8
 
 SP::SP(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, float outscale, UINT step, UINT outNum, float Threshold, bool searchOn) {
 	Sp = new SearchPixel(srcwid, srchei, seawid, seahei, outscale, step, outNum, Threshold);
@@ -16,7 +17,7 @@ SP::SP(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, float outscale, UINT 
 	UINT spow = Sp->GetOutWid();
 	UINT spoh = Sp->GetOutHei();
 	if (searchOn)SearchMaxNum = Sp->GetSearchNum();
-	else SearchMaxNum = 1;
+	else SearchMaxNum = BADGENUM;
 	SearchNum = SearchMaxNum;
 	Searchflg = new bool[SearchMaxNum];
 	SearchOutInd = new int[SearchMaxNum];
@@ -57,6 +58,7 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	Type = type;
 	InW = srcWid;
 	InH = srcHei;
+	searchon = searchOn;
 
 	sp[0] = new SP(InW, InH, Width, Height, 1.0f, 16, numNode[depth - 1], Threshold, searchOn);
 	sp[1] = new SP(InW, InH, Width * 1.5, Height * 1.5, 0.67f, 24, numNode[depth - 1], Threshold, searchOn);
@@ -194,19 +196,21 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 
 	Depth = depth + 1;
 
-	din = new PolygonData2D[SearchMaxNum];
-	for (UINT i = 0; i < SearchMaxNum; i++) {
+	UINT p2dNum = SearchMaxNum;
+	if (!searchon)p2dNum = 1;
+	din = new PolygonData2D[p2dNum];
+	for (UINT i = 0; i < p2dNum; i++) {
 		din[i].SetCommandList(0);
 		din[i].GetVBarray2D(1);
 		din[i].TextureInit(Width, Height);
 		din[i].TexOn();
 		din[i].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 	}
-	pixIn = new UINT**[SearchMaxNum];
-	for (UINT i = 0; i < SearchMaxNum; i++) {
+	pixIn = new UINT**[p2dNum];
+	for (UINT i = 0; i < p2dNum; i++) {
 		pixIn[i] = new UINT*[Height];
 	}
-	for (UINT i = 0; i < SearchMaxNum; i++) {
+	for (UINT i = 0; i < p2dNum; i++) {
 		for (UINT k = 0; k < Height; k++) {
 			pixIn[i][k] = new UINT[Width];
 		}
@@ -221,10 +225,12 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 
 ImageRecognition::~ImageRecognition() {
 
-	for (UINT k = 0; k < SearchMaxNum; k++) {
+	UINT p2dNum = SearchMaxNum;
+	if (!searchon)p2dNum = 1;
+	for (UINT k = 0; k < p2dNum; k++) {
 		for (UINT i = 0; i < Height; i++)ARR_DELETE(pixIn[k][i]);
 	}
-	for (UINT k = 0; k < SearchMaxNum; k++)ARR_DELETE(pixIn[k]);
+	for (UINT k = 0; k < p2dNum; k++)ARR_DELETE(pixIn[k]);
 	ARR_DELETE(pixIn);
 	ARR_DELETE(numN);
 	S_DELETE(nn);
@@ -313,35 +319,58 @@ void ImageRecognition::Query() {
 }
 
 void ImageRecognition::LearningDecay(float in) {
-	float c0 = 0.03f;
-	float c1 = 0.03f;
-	float c2 = 0.03f;
-	float n = 0.10f;
+	/*float c0 = 0.05f;
+	float c1 = 0.05f;
+	float c2 = 0.05f;
+	float n = 0.12f;
+
 	if (in > 0.2f) {
-		c0 = 0.01f;
-		c1 = 0.01f;
-		c2 = 0.01f;
-		n = 0.08f;
+		c0 = 0.02f;
+		c1 = 0.02f;
+		c2 = 0.02f;
+		n = 0.10f;
 	}
 	if (in > 0.4f) {
-		c0 = 0.002f;
-		c1 = 0.002f;
-		c2 = 0.002f;
-		n = 0.06f;
+		c0 = 0.003f;
+		c1 = 0.003f;
+		c2 = 0.003f;
+		n = 0.07f;
 	}
-	if (in > 0.8f) {
+	if (in > 0.5f) {
 		c0 = 0.0005f;
 		c1 = 0.0005f;
 		c2 = 0.0005f;
-		n = 0.01f;
+		n = 0.03f;
 	}
 
+	if (in > 0.6f) {
+		c0 = 0.0002f;
+		c1 = 0.0002f;
+		c2 = 0.0002f;
+		n = 0.02f;
+	}
+	if (in > 0.7f) {
+		c0 = 0.0001f;
+		c1 = 0.0001f;
+		c2 = 0.0001f;
+		n = 0.02f;
+	}
+	if (in > 0.9f) {
+		c0 = 0.00005f;
+		c1 = 0.00005f;
+		c2 = 0.00005f;
+		n = 0.01f;
+	}*/
+
+	float c = 0.05f * pow((1.0f - in), 3);
+	float n = 0.12f * (1.0f - in);
+
 	if (Type == 'C' || Type == 'D' || Type == 'S')
-		cn[0]->SetLearningLate(c0);
+		cn[0]->SetLearningLate(c);
 	if (Type == 'D' || Type == 'S')
-		cn[1]->SetLearningLate(c1);
+		cn[1]->SetLearningLate(c);
 	if (Type == 'S')
-		cn[2]->SetLearningLate(c2);
+		cn[2]->SetLearningLate(c);
 	nn->SetLearningLate(n);
 }
 
@@ -445,42 +474,46 @@ void ImageRecognition::LearningTexture() {
 	UINT Hei = texdesc.Height;
 	UINT sepW = Wid / LEARTEXWID;
 	UINT sepH = Hei / LEARTEXWID;
-	UINT pixWst = learTexsepInd[learTexInd] % sepW * LEARTEXWID;
-	UINT pixHst = learTexsepInd[learTexInd] / sepW * LEARTEXWID;
+
 	currentTarget = target[learTexInd];
 	nn->SetTargetEl(target[learTexInd], 0);
-	for (int j = pixHst; j < LEARTEXWID + pixHst; j++) {
-		for (int i = pixWst; i < LEARTEXWID + pixWst; i++) {
-			UINT pixWidNum = Wid * 4;
-			UINT pInd = pixWidNum * j + i * 4;
-			UINT pt = (ptex[pInd + 0] + ptex[pInd + 1] + ptex[pInd + 2]) / 3;
-			pixIn[0][j - pixHst][i - pixWst] = ((UINT)ptex[pInd + 2] << 16) + ((UINT)ptex[pInd + 1] << 8) + ((UINT)ptex[pInd + 0]);
-			float el = ((float)pt / 255.0f * 0.99f) + 0.01f;
 
-			if (el < 0.0f) {
-				MessageBoxA(0, "LearningTexture()エラー", 0, MB_OK);
-			}
+	for (int k = 0; k < BADGENUM; k++) {
+		UINT pixWst = (learTexsepInd[learTexInd] + k) % sepW * LEARTEXWID;
+		UINT pixHst = (learTexsepInd[learTexInd] + k) / sepW * LEARTEXWID;
+		for (int j = pixHst; j < LEARTEXWID + pixHst; j++) {
+			for (int i = pixWst; i < LEARTEXWID + pixWst; i++) {
+				UINT pixWidNum = Wid * 4;
+				UINT pInd = pixWidNum * j + i * 4;
+				UINT pt = (ptex[pInd + 0] + ptex[pInd + 1] + ptex[pInd + 2]) / 3;
+				pixIn[0][j - pixHst][i - pixWst] = ((UINT)ptex[pInd + 2] << 16) + ((UINT)ptex[pInd + 1] << 8) + ((UINT)ptex[pInd + 0]);
+				float el = ((float)pt / 255.0f * 0.99f) + 0.01f;
 
-			UINT nInd = LEARTEXWID * (j - pixHst) + (i - pixWst);
-			switch (Type) {
-			case 'C':
-			case 'D':
-			case 'S':
-				cn[0]->FirstInput(el, nInd);
-				break;
-			case 'P':
-				po[0]->FirstInput(el, nInd);
-				break;
-			case 'N':
-				nn->FirstInput(el, nInd);
-				break;
+				if (el < 0.0f) {
+					MessageBoxA(0, "LearningTexture()エラー", 0, MB_OK);
+				}
+
+				UINT nInd = LEARTEXWID * (j - pixHst) + (i - pixWst);
+				switch (Type) {
+				case 'C':
+				case 'D':
+				case 'S':
+					cn[0]->FirstInput(el, nInd, k);
+					break;
+				case 'P':
+					po[0]->FirstInput(el, nInd, k);
+					break;
+				case 'N':
+					nn->FirstInput(el, nInd, k);
+					break;
+				}
 			}
 		}
 	}
 	GetTextureUp(learTexInd)->Unmap(0, nullptr);
 
-	learTexsepInd[learTexInd]++;
-	if (learTexsepInd[learTexInd] >= learTexsepNum[learTexInd]) {
+	learTexsepInd[learTexInd] += BADGENUM;
+	if (learTexsepNum[learTexInd] - 1 - learTexsepInd[learTexInd] < BADGENUM) {
 		learTexsepInd[learTexInd] = 0;
 
 		if (positivef == 0) {
@@ -613,7 +646,9 @@ void ImageRecognition::CNDraw() {
 void ImageRecognition::INDraw(float x, float y, float xsize, float ysize) {
 
 	UINT cnt = 0;
-	for (int i = 0; i < sp[spInd]->SearchMaxNum; i++) {
+	UINT p2dNum = sp[spInd]->SearchMaxNum;
+	if (!searchon)p2dNum = 1;
+	for (int i = 0; i < p2dNum; i++) {
 		din[i].Update(cnt * 52.0f + x, 548.0f + y, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 52.0f + xsize, 52.0f + ysize);
 		if (sp[spInd]->SearchMaxNum == 1 || Threshold <= sp[spInd]->out[i]) {
 			din[i].SetTextureMPixel(pixIn[i], 0xff, 0xff, 0xff, 255);
