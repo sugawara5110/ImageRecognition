@@ -135,6 +135,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 8, 'D', searchOn, threshold);
 				nn->SetTarget(target);
 				nn->SetLearningNum(learningImageNum);
+				nn->CreateLearningImagebyte();
 				if (state == 1) {
 					graph = new Graph();
 					graph->CreateGraph(100, 218, 256, 128, 256, 256);
@@ -149,11 +150,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		case 1:
 			//äwèK
-			if (cnt < 320000) {
-				nn->LearningTexture();
-				nn->LearningDecay((float)cnt / 320000.0f);
+			if (cnt < 80000) {
+				//nn->LearningTexture();
+				nn->LearningByteImage();
+				nn->LearningDecay((float)cnt / 80000.0f);
 				nn->Training();
-				cnt += 8;
+				cnt++;
 			}
 
 			if (cancel) {
@@ -213,7 +215,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			nn->INDraw(0.0f, 0.0f, 0.0f, 0.0f);
 			nn->textDraw(state, 0.0f, 0.0f);
 			if (state == 1) {
-				float tmw = (float)cnt / 320000.0f * 255.0f;
+				float tmw = (float)cnt / 80000.0f * 255.0f;
 				float tmh = (float)nn->Getcurrout() / 100.0f * 255.0f;
 				if (nn->Getcurrtar() >= 0.5f)
 					graph->SetData((int)tmw, (int)tmh, 0xffffffff);

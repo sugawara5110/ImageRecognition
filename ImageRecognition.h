@@ -71,6 +71,9 @@ private:
 	int errer = 0;
 	int currout = 0;
 
+	BYTE *posImage = nullptr;
+	BYTE *negaImage = nullptr;
+
 	void RunConvolutionToPooling(UINT ind);
 	void RunPoolingToConvolution(UINT ind);
 	void RunPoolingToNN(UINT ind);
@@ -89,6 +92,8 @@ public:
 	~ImageRecognition();
 	void SetTarget(float *tar);
 	void SetLearningNum(UINT num);
+	void CreateLearningImagebyte();
+	void LearningByteImage();
 	void LearningTexture();
 	void InputTexture(int Tno);
 	void InputPixel(BYTE *pix);

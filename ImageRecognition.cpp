@@ -246,6 +246,8 @@ ImageRecognition::~ImageRecognition() {
 	ARR_DELETE(din);
 	ARR_DELETE(learTexsepNum);
 	ARR_DELETE(learTexsepInd);
+	ARR_DELETE(posImage);
+	ARR_DELETE(negaImage);
 }
 
 void ImageRecognition::SetTarget(float *tar) {
@@ -464,6 +466,105 @@ void ImageRecognition::SetLearningNum(UINT num) {
 	}
 }
 
+void ImageRecognition::CreateLearningImagebyte() {
+
+	srand((unsigned)time(NULL));
+
+	posImage = new BYTE[posNum * LEARTEXWID * LEARTEXWID];
+	negaImage = new BYTE[negaNum * LEARTEXWID * LEARTEXWID];
+	int negaInd = 0;
+	int posInd = 0;
+
+	for (UINT i = 0; i < learTexNum; i++) {
+		D3D12_SUBRESOURCE_DATA texResource;
+		GetTextureUp(i)->Map(0, nullptr, reinterpret_cast<void**>(&texResource));
+		unsigned char *ptex = (unsigned char*)texResource.pData;
+		D3D12_RESOURCE_DESC texdesc = GetTexture(i)->GetDesc();
+		UINT Wid = texdesc.Width;//âÊëúÉTÉCÉY
+		UINT Hei = texdesc.Height;
+		UINT sepW = Wid / LEARTEXWID;//âÊëúå¬êî
+		UINT sepH = Hei / LEARTEXWID;
+		UINT pixWidNum = Wid * 4;
+
+		for (UINT y = 0; y < sepH; y++) {
+			for (UINT x = 0; x < sepW; x++) {
+				UINT heist = y * LEARTEXWID;
+				UINT widst = x * LEARTEXWID;
+				for (UINT hei = heist; hei < LEARTEXWID + heist; hei++) {
+					for (UINT wid = widst; wid < LEARTEXWID + widst; wid++) {
+						UINT pInd = pixWidNum * hei + wid * 4;
+						UINT pt = (ptex[pInd + 0] + ptex[pInd + 1] + ptex[pInd + 2]) / 3;
+						if (i < TextureLoader::GetlearningCorrectFaceFirstInd()) {
+							negaImage[negaInd++] = pt;
+						}
+						else {
+							posImage[posInd++] = pt;
+						}
+					}
+				}
+			}
+		}
+
+		GetTextureUp(i)->Unmap(0, nullptr);
+	}
+}
+
+void ImageRecognition::LearningByteImage() {
+
+	int byteInd = 0;
+	if (++positivef > 2)positivef = 0;
+
+	if (positivef == 0) {
+		currentTarget = 0.99f;
+		nn->SetTargetEl(0.99f, 0);
+	}
+	else {
+		currentTarget = 0.01f;
+		nn->SetTargetEl(0.01f, 0);
+	}
+
+	for (int k = 0; k < BADGENUM; k++) {
+
+		if (positivef == 0) {
+			byteInd = rand() % posNum;
+			poscnt++;
+		}
+		else {
+			byteInd = rand() % negaNum;
+			negacnt++;
+		}
+
+		for (UINT i = 0; i < LEARTEXWID * LEARTEXWID; i++) {
+			float el;
+			UINT imInd = byteInd * LEARTEXWID * LEARTEXWID;
+			if (positivef == 0) {
+				el = ((float)posImage[i + imInd] / 255.0f * 0.99f) + 0.01f;
+			}
+			else {
+				el = ((float)negaImage[i + imInd] / 255.0f * 0.99f) + 0.01f;
+			}
+
+			UINT pixX = i % LEARTEXWID;
+			UINT pixY = i / LEARTEXWID;
+			pixIn[0][pixY][pixX] = ((UINT)(el * 255.0f) << 16) + ((UINT)(el * 255.0f) << 8) + ((UINT)(el * 255.0f));
+
+			switch (Type) {
+			case 'C':
+			case 'D':
+			case 'S':
+				cn[0]->FirstInput(el, i, k);
+				break;
+			case 'P':
+				po[0]->FirstInput(el, i, k);
+				break;
+			case 'N':
+				nn->FirstInput(el, i, k);
+				break;
+			}
+		}
+	}
+}
+
 void ImageRecognition::LearningTexture() {
 
 	D3D12_SUBRESOURCE_DATA texResource;
@@ -524,7 +625,7 @@ void ImageRecognition::LearningTexture() {
 		}
 	}
 
-	if (++positivef > 1)positivef = 0;
+	if (++positivef > 2)positivef = 0;
 	if (positivef == 0) {
 		learTexInd = posInd + TextureLoader::GetlearningCorrectFaceFirstInd();
 		poscnt++;
@@ -650,7 +751,7 @@ void ImageRecognition::INDraw(float x, float y, float xsize, float ysize) {
 	if (!searchon)p2dNum = 1;
 	for (int i = 0; i < p2dNum; i++) {
 		din[i].Update(cnt * 52.0f + x, 548.0f + y, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 52.0f + xsize, 52.0f + ysize);
-		if (sp[spInd]->SearchMaxNum == 1 || Threshold <= sp[spInd]->out[i]) {
+		if (sp[spInd]->SearchMaxNum == BADGENUM || Threshold <= sp[spInd]->out[i]) {
 			din[i].SetTextureMPixel(pixIn[i], 0xff, 0xff, 0xff, 255);
 			cnt++;
 			din[i].Draw();
