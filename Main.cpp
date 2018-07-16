@@ -59,7 +59,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UINT *input = nullptr;
 	ImageRecognition *nn = nullptr;;
 	int cnt = 0;
-	Graph *graph = nullptr;
+	Graph *graph[2] = { nullptr };
 	UINT state = 0;//0:タイトル, 1:学習モード, 2:検出モード
 	UINT select = 0;
 	bool enter = false;
@@ -130,15 +130,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				enter = false;
 				dx->Bigin(0);
 				input = new UINT[2];
-				input[0] = 300;
+				input[0] = 600;
 				input[1] = 1;
 				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 8, 'D', searchOn, threshold);
 				nn->SetTarget(target);
 				nn->SetLearningNum(learningImageNum);
-				nn->CreateLearningImagebyte();
 				if (state == 1) {
-					graph = new Graph();
-					graph->CreateGraph(100, 218, 256, 128, 256, 256);
+					nn->CreateLearningImagebyte(0.7f);
+					graph[0] = new Graph();
+					graph[0]->CreateGraph(100, 218, 256, 128, 256, 256);
+					graph[1] = new Graph();
+					graph[1]->CreateGraph(357, 218, 256, 128, 256, 256);
 				}
 				dx->End(0);
 				dx->WaitFenceCurrent();
@@ -153,8 +155,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			if (cnt < 80000) {
 				//nn->LearningTexture();
 				nn->LearningByteImage();
-				nn->LearningDecay((float)cnt / 80000.0f);
+				nn->LearningDecay((float)cnt / 80000.0f, 1.0f);
 				nn->Training();
+				nn->TestByteImage();
+				nn->Test();
 				cnt++;
 			}
 
@@ -164,13 +168,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				nn->SaveData();
 				ARR_DELETE(input);
 				S_DELETE(nn);
-				S_DELETE(graph);
+				S_DELETE(graph[0]);
+				S_DELETE(graph[1]);
 				drawOn = false;
 				cnt = 0;
 				break;
 			}
 			DxText::GetInstance()->UpDateText(L"メニューに戻る場合はDelete", 550.0f, 550.0f, 15.0f, { 0.3f, 1.0f, 0.3f, 1.0f });
-			DxText::GetInstance()->UpDateText(L"顔画像検出AI実験中 ", 100.0f, 340.0f, 60.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+			DxText::GetInstance()->UpDateText(L"顔画像検出AI実験中 ", 130.0f, 370.0f, 30.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+			DxText::GetInstance()->UpDateText(L"Training ", 130.0f, 348.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+			DxText::GetInstance()->UpDateText(L"Test ", 390.0f, 348.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 			drawOn = true;
 			break;
 		case 2:
@@ -192,7 +199,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				state = 0;
 				ARR_DELETE(input);
 				S_DELETE(nn);
-				S_DELETE(graph);
+				S_DELETE(graph[0]);
+				S_DELETE(graph[1]);
 				S_DELETE(cam);
 				camOn = false;
 				drawOn = false;
@@ -208,19 +216,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		dx->Bigin(0);
 		dx->Sclear(0);
 		if (state != 0 && drawOn) {
-			nn->NNDraw();
-			nn->PODraw();
-			nn->CNDraw();
+			if (state == 1) {
+				nn->NNDraw();
+				nn->PODraw();
+				nn->CNDraw();
+			}
 			nn->SPDraw();
 			nn->INDraw(0.0f, 0.0f, 0.0f, 0.0f);
 			nn->textDraw(state, 0.0f, 0.0f);
 			if (state == 1) {
 				float tmw = (float)cnt / 80000.0f * 255.0f;
 				float tmh = (float)nn->Getcurrout() / 100.0f * 255.0f;
-				if (nn->Getcurrtar() >= 0.5f)
-					graph->SetData((int)tmw, (int)tmh, 0xffffffff);
-				else graph->SetData((int)tmw, (int)tmh, 0xff0000ff);
-				graph->Draw();
+				float tmhtes = (float)nn->Gettestout() / 100.0f * 255.0f;
+				if (nn->Getcurrtar() >= 0.5f) {
+					graph[0]->SetData((int)tmw, (int)tmh, 0xffffffff);
+					graph[1]->SetData((int)tmw, (int)tmhtes, 0xffffffff);
+				}
+				else {
+					graph[0]->SetData((int)tmw, (int)tmh, 0xff0000ff);
+					graph[1]->SetData((int)tmw, (int)tmhtes, 0xff0000ff);
+				}
+				graph[0]->Draw();
+				graph[1]->Draw();
 			}
 		}
 		if (state == 1) {
@@ -236,7 +253,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ARR_DELETE(input);
 	S_DELETE(nn);
 	S_DELETE(cam);
-	S_DELETE(graph);
+	S_DELETE(graph[0]);
+	S_DELETE(graph[1]);
 	TextureLoader::DeleteTextureStruct();
 	DxText::DeleteInstance();
 	Dx12Process::DeleteInstance();

@@ -70,10 +70,6 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	unsigned int hei = Height;
 	if (Type == 'C' || Type == 'D' || Type == 'S') {
 		cn[0] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 7, 2);
-		if (threshold == 0.0f)
-			cn[0]->SetdropThreshold(0.0f);
-		else cn[0]->SetdropThreshold(0.0);
-
 		cn[0]->ComCreateSigmoid();
 		cn[0]->SetLearningLate(0.05f);
 		wid = cn[0]->GetOutWidth();
@@ -107,10 +103,6 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	}
 	if (Type == 'D' || Type == 'S') {
 		cn[1] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 5, 1);
-		if (threshold == 0.0f)
-			cn[1]->SetdropThreshold(0.0f);
-		else cn[1]->SetdropThreshold(0.0);
-
 		cn[1]->ComCreateSigmoid();
 		cn[1]->SetLearningLate(0.05f);
 		wid = cn[1]->GetOutWidth();
@@ -138,10 +130,6 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 
 	if (Type == 'S') {
 		cn[2] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 5, 1);
-		if (threshold == 0.0f)
-			cn[2]->SetdropThreshold(0.0f);
-		else cn[2]->SetdropThreshold(0.0);
-
 		cn[2]->ComCreateSigmoid();
 		cn[2]->SetLearningLate(0.003f);
 		wid = cn[2]->GetOutWidth();
@@ -171,17 +159,6 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	numN[0] = wid * hei;
 	for (int i = 1; i < depth + 1; i++)numN[i] = numNode[i - 1];
 	nn = new DxNeuralNetwork(numN, depth + 1, filNum, SearchMaxNum);
-	float *drop = new float[2];
-	if (threshold == 0.0f) {
-		drop[0] = 0.0f;
-		drop[1] = 0.0f;
-	}
-	else {//検出時はドロップ率0%にする
-		drop[0] = 0.0f;
-		drop[1] = 0.0f;
-	}
-	nn->SetdropThreshold(drop);
-	ARR_DELETE(drop);
 	nn->ComCreateSigmoid();
 	nn->SetLearningLate(0.12f);
 	nn->CreareNNTexture(wid, hei, filNum);
@@ -246,8 +223,10 @@ ImageRecognition::~ImageRecognition() {
 	ARR_DELETE(din);
 	ARR_DELETE(learTexsepNum);
 	ARR_DELETE(learTexsepInd);
-	ARR_DELETE(posImage);
-	ARR_DELETE(negaImage);
+	ARR_DELETE(posImageTrain);
+	ARR_DELETE(negaImageTrain);
+	ARR_DELETE(posImageTest);
+	ARR_DELETE(negaImageTest);
 }
 
 void ImageRecognition::SetTarget(float *tar) {
@@ -298,6 +277,28 @@ void ImageRecognition::queryDetec() {
 	}
 }
 
+void ImageRecognition::queryTest() {
+	if (Type == 'C' || Type == 'D') {
+		RunConvolutionToPoolingTest(0);
+	}
+	if (Type == 'C' || Type == 'P') {
+		RunPoolingToNNTest(0);
+	}
+	if (Type == 'D') {
+		RunPoolingToConvolutionTest(0);
+		RunConvolutionToPoolingTest(1);
+		RunPoolingToNNTest(1);
+	}
+	if (Type == 'S') {
+		RunConvolutionToPoolingTest(0);
+		RunPoolingToConvolutionTest(0);
+		RunConvolutionToPoolingTest(1);
+		RunPoolingToConvolutionTest(1);
+		RunConvolutionToPoolingTest(2);
+		RunPoolingToNNTest(2);
+	}
+}
+
 void ImageRecognition::Query() {
 	queryDetec();
 	nn->Query(sp[spInd]->SearchNum);
@@ -320,52 +321,10 @@ void ImageRecognition::Query() {
 	}
 }
 
-void ImageRecognition::LearningDecay(float in) {
-	/*float c0 = 0.05f;
-	float c1 = 0.05f;
-	float c2 = 0.05f;
-	float n = 0.12f;
+void ImageRecognition::LearningDecay(float in, float scale) {
 
-	if (in > 0.2f) {
-		c0 = 0.02f;
-		c1 = 0.02f;
-		c2 = 0.02f;
-		n = 0.10f;
-	}
-	if (in > 0.4f) {
-		c0 = 0.003f;
-		c1 = 0.003f;
-		c2 = 0.003f;
-		n = 0.07f;
-	}
-	if (in > 0.5f) {
-		c0 = 0.0005f;
-		c1 = 0.0005f;
-		c2 = 0.0005f;
-		n = 0.03f;
-	}
-
-	if (in > 0.6f) {
-		c0 = 0.0002f;
-		c1 = 0.0002f;
-		c2 = 0.0002f;
-		n = 0.02f;
-	}
-	if (in > 0.7f) {
-		c0 = 0.0001f;
-		c1 = 0.0001f;
-		c2 = 0.0001f;
-		n = 0.02f;
-	}
-	if (in > 0.9f) {
-		c0 = 0.00005f;
-		c1 = 0.00005f;
-		c2 = 0.00005f;
-		n = 0.01f;
-	}*/
-
-	float c = 0.05f * pow((1.0f - in), 3);
-	float n = 0.12f * (1.0f - in);
+	float c = 0.05f * pow((1.0f - in), 3) * scale;
+	float n = 0.12f * (1.0f - in) * scale;
 
 	if (Type == 'C' || Type == 'D' || Type == 'S')
 		cn[0]->SetLearningLate(c);
@@ -378,7 +337,13 @@ void ImageRecognition::LearningDecay(float in) {
 
 void ImageRecognition::Training() {
 	query();
+	float *drop = new float[2];
+	drop[0] = 0.0f;
+	drop[1] = 0.5f;
+	nn->SetdropThreshold(drop);
+	ARR_DELETE(drop);
 	nn->Training();
+
 	if (Type == 'D') {
 		NNToPoolingBackPropagation(1);
 		PoolingToConvolutionBackPropagation(1);
@@ -400,9 +365,24 @@ void ImageRecognition::Training() {
 		ConvolutionToPoolingBackPropagation(0);
 		PoolingToConvolutionBackPropagation(0);
 	}
+
+	currout = nn->GetOutputEl(0) * 100.0f;
+}
+
+void ImageRecognition::Test() {
+	queryTest();
+	float *drop = new float[2];
+	drop[0] = 0.0f;
+	drop[1] = 0.0f;
+	nn->SetdropThreshold(drop);
+	ARR_DELETE(drop);
+	nn->Test();
+
+	testOut = nn->GetOutputEl(0) * 100.0f;
 }
 
 void ImageRecognition::RunConvolutionToPooling(UINT ind) {
+	cn[ind]->SetdropThreshold(0.0f);
 	cn[ind]->Query();
 	po[ind]->SetInputResource(cn[ind]->GetOutputResource());
 }
@@ -429,6 +409,22 @@ void ImageRecognition::RunPoolingToConvolutionDetec(UINT ind) {
 
 void ImageRecognition::RunPoolingToNNDetec(UINT ind) {
 	po[ind]->Detection(sp[spInd]->SearchNum);
+	nn->SetInputResource(po[ind]->GetOutputResource());
+}
+
+void ImageRecognition::RunConvolutionToPoolingTest(UINT ind) {
+	cn[ind]->SetdropThreshold(0.0f);
+	cn[ind]->Test();
+	po[ind]->SetInputResource(cn[ind]->GetOutputResource());
+}
+
+void ImageRecognition::RunPoolingToConvolutionTest(UINT ind) {
+	po[ind]->Test();
+	cn[ind + 1]->SetInputResource(po[ind]->GetOutputResource());
+}
+
+void ImageRecognition::RunPoolingToNNTest(UINT ind) {
+	po[ind]->Test();
 	nn->SetInputResource(po[ind]->GetOutputResource());
 }
 
@@ -466,12 +462,12 @@ void ImageRecognition::SetLearningNum(UINT num) {
 	}
 }
 
-void ImageRecognition::CreateLearningImagebyte() {
+void ImageRecognition::CreateLearningImagebyte(float RateOftrainImage) {
 
 	srand((unsigned)time(NULL));
 
-	posImage = new BYTE[posNum * LEARTEXWID * LEARTEXWID];
-	negaImage = new BYTE[negaNum * LEARTEXWID * LEARTEXWID];
+	BYTE *posImage = new BYTE[posNum * LEARTEXWID * LEARTEXWID];
+	BYTE *negaImage = new BYTE[negaNum * LEARTEXWID * LEARTEXWID];
 	int negaInd = 0;
 	int posInd = 0;
 
@@ -507,12 +503,32 @@ void ImageRecognition::CreateLearningImagebyte() {
 
 		GetTextureUp(i)->Unmap(0, nullptr);
 	}
+	//トレーニングデータ, テストデータを分ける
+	posTraNum = posNum * RateOftrainImage;
+	negaTraNum = negaNum * RateOftrainImage;
+	posTestNum = posNum - posTraNum;
+	negaTestNum = negaNum - negaTraNum;
+	posImageTrain = new BYTE[posTraNum * LEARTEXWID * LEARTEXWID];
+	posImageTest = new BYTE[posTestNum * LEARTEXWID * LEARTEXWID];
+	negaImageTrain = new BYTE[negaTraNum * LEARTEXWID * LEARTEXWID];
+	negaImageTest = new BYTE[negaTestNum * LEARTEXWID * LEARTEXWID];
+
+	size_t posTraSize = sizeof(BYTE) * posTraNum * LEARTEXWID * LEARTEXWID;
+	size_t negaTraSize = sizeof(BYTE) * negaTraNum * LEARTEXWID * LEARTEXWID;
+	size_t posTestSize = sizeof(BYTE) * posTestNum * LEARTEXWID * LEARTEXWID;
+	size_t negaTestSize = sizeof(BYTE) * negaTestNum * LEARTEXWID * LEARTEXWID;
+	memcpy(posImageTrain, posImage, posTraSize);
+	memcpy(negaImageTrain, negaImage, negaTraSize);
+	memcpy(posImageTest, &posImage[posTraSize], posTestSize);
+	memcpy(negaImageTest, &negaImage[negaTraSize], negaTestSize);
+	ARR_DELETE(posImage);
+	ARR_DELETE(negaImage);
 }
 
 void ImageRecognition::LearningByteImage() {
 
 	int byteInd = 0;
-	if (++positivef > 2)positivef = 0;
+	if (++positivef > 1)positivef = 0;
 
 	if (positivef == 0) {
 		currentTarget = 0.99f;
@@ -526,11 +542,11 @@ void ImageRecognition::LearningByteImage() {
 	for (int k = 0; k < BADGENUM; k++) {
 
 		if (positivef == 0) {
-			byteInd = rand() % posNum;
+			byteInd = rand() % posTraNum;
 			poscnt++;
 		}
 		else {
-			byteInd = rand() % negaNum;
+			byteInd = rand() % negaTraNum;
 			negacnt++;
 		}
 
@@ -538,10 +554,10 @@ void ImageRecognition::LearningByteImage() {
 			float el;
 			UINT imInd = byteInd * LEARTEXWID * LEARTEXWID;
 			if (positivef == 0) {
-				el = ((float)posImage[i + imInd] / 255.0f * 0.99f) + 0.01f;
+				el = ((float)posImageTrain[i + imInd] / 255.0f * 0.99f) + 0.01f;
 			}
 			else {
-				el = ((float)negaImage[i + imInd] / 255.0f * 0.99f) + 0.01f;
+				el = ((float)negaImageTrain[i + imInd] / 255.0f * 0.99f) + 0.01f;
 			}
 
 			UINT pixX = i % LEARTEXWID;
@@ -561,6 +577,42 @@ void ImageRecognition::LearningByteImage() {
 				nn->FirstInput(el, i, k);
 				break;
 			}
+		}
+	}
+}
+
+void ImageRecognition::TestByteImage() {
+
+	int byteInd = 0;
+	if (positivef == 0) {
+		byteInd = rand() % posTestNum;
+	}
+	else {
+		byteInd = rand() % negaTestNum;
+	}
+
+	for (UINT i = 0; i < LEARTEXWID * LEARTEXWID; i++) {
+		float el;
+		UINT imInd = byteInd * LEARTEXWID * LEARTEXWID;
+		if (positivef == 0) {
+			el = ((float)posImageTest[i + imInd] / 255.0f * 0.99f) + 0.01f;
+		}
+		else {
+			el = ((float)negaImageTest[i + imInd] / 255.0f * 0.99f) + 0.01f;
+		}
+
+		switch (Type) {
+		case 'C':
+		case 'D':
+		case 'S':
+			cn[0]->FirstInput(el, i);
+			break;
+		case 'P':
+			po[0]->FirstInput(el, i);
+			break;
+		case 'N':
+			nn->FirstInput(el, i);
+			break;
 		}
 	}
 }
@@ -703,24 +755,24 @@ void ImageRecognition::InputPixel(BYTE *pix) {
 }
 
 void ImageRecognition::NNDraw() {
-	dnn.Update(735.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
+	dnn.Update(735.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 20.0f, 20.0f * filNum);
 	dnn.CopyResource(nn->GetNNTextureResource(), nn->GetNNTextureResourceStates());
 	dnn.Draw();
 }
 
 void ImageRecognition::PODraw() {
 	if (Type == 'C' || Type == 'P' || Type == 'D' || Type == 'S') {
-		dpo[0].Update(125.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
+		dpo[0].Update(125.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 20.0f, 20.0f * filNum);
 		dpo[0].CopyResource(po[0]->GetNNTextureResource(), po[0]->GetNNTextureResourceStates());
 		dpo[0].Draw();
 	}
 	if (Type == 'D' || Type == 'S') {
-		dpo[1].Update(365.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
+		dpo[1].Update(365.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 20.0f, 20.0f * filNum);
 		dpo[1].CopyResource(po[1]->GetNNTextureResource(), po[1]->GetNNTextureResourceStates());
 		dpo[1].Draw();
 	}
 	if (Type == 'S') {
-		dpo[2].Update(605.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
+		dpo[2].Update(605.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 20.0f, 20.0f * filNum);
 		dpo[2].CopyResource(po[2]->GetNNTextureResource(), po[2]->GetNNTextureResourceStates());
 		dpo[2].Draw();
 	}
@@ -728,17 +780,17 @@ void ImageRecognition::PODraw() {
 
 void ImageRecognition::CNDraw() {
 	if (Type == 'C' || Type == 'D' || Type == 'S') {
-		dcn[0].Update(5.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
+		dcn[0].Update(5.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 20.0f, 20.0f * filNum);
 		dcn[0].CopyResource(cn[0]->GetNNTextureResource(), cn[0]->GetNNTextureResourceStates());
 		dcn[0].Draw();
 	}
 	if (Type == 'D' || Type == 'S') {
-		dcn[1].Update(245.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
+		dcn[1].Update(245.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 20.0f, 20.0f * filNum);
 		dcn[1].CopyResource(cn[1]->GetNNTextureResource(), cn[1]->GetNNTextureResourceStates());
 		dcn[1].Draw();
 	}
 	if (Type == 'S') {
-		dcn[2].Update(485.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 25.0f, 25.0f * filNum);
+		dcn[2].Update(485.0f, 20.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 20.0f, 20.0f * filNum);
 		dcn[2].CopyResource(cn[2]->GetNNTextureResource(), cn[2]->GetNNTextureResourceStates());
 		dcn[2].Draw();
 	}
@@ -785,29 +837,14 @@ void ImageRecognition::textDraw(UINT stateNum, float x, float y) {
 		DxText::GetInstance()->UpDateText(L"プーリング層", 580.0f, 7.0f, 15.0f, { 0.5f, 1.0f, 0.5f, 1.0f });
 	}
 
-	int tm;
-	float tm1;
 	switch (stateNum) {
 	case 1:
 		DxText::GetInstance()->UpDateText(L"学習中出力 ", 600.0f, 400.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
-		tm1 = nn->GetOutputEl(0);
-		tm = tm1 * 100;
-		/*if (tm < 0 || tm > 100) {
-			MessageBoxA(0, "学習中出力エラー", 0, MB_OK);
-			char st1[50];
-			sprintf(st1, "%d", tm);
-			MessageBoxA(0, st1, 0, MB_OK);
-			char st2[50];
-			sprintf(st2, "%f", tm1);
-			MessageBoxA(0, st2, 0, MB_OK);
-		}*/
-		if (tm < 0)tm = 0.0f;
-		currout = tm;
-		DxText::GetInstance()->UpDateValue(tm, 710.0f, 400.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateValue(currout, 710.0f, 400.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
 		DxText::GetInstance()->UpDateText(L"Target ", 600.0f, 415.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 		DxText::GetInstance()->UpDateValue(currentTarget * 100.0f, 710.0f, 415.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
 		DxText::GetInstance()->UpDateText(L"誤差 ", 600.0f, 430.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
-		errer = abs((int)((currentTarget * 100.0f) - tm));
+		errer = abs((int)((currentTarget * 100.0f) - currout));
 		DxText::GetInstance()->UpDateValue(errer, 710.0f, 430.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
 		DxText::GetInstance()->UpDateText(L"正解画像学習 ", 600.0f, 445.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 		DxText::GetInstance()->UpDateText(L"不正解画像学習 ", 600.0f, 460.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
@@ -836,6 +873,10 @@ void ImageRecognition::textDraw(UINT stateNum, float x, float y) {
 
 int ImageRecognition::Getcurrout() {
 	return currout;
+}
+
+int ImageRecognition::Gettestout() {
+	return testOut;
 }
 
 float ImageRecognition::Getcurrtar() {

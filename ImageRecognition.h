@@ -70,9 +70,13 @@ private:
 	float currentTarget = 0.0f;
 	int errer = 0;
 	int currout = 0;
+	int testOut = 0;
 
-	BYTE *posImage = nullptr;
-	BYTE *negaImage = nullptr;
+	BYTE *posImageTrain = nullptr;
+	BYTE *negaImageTrain = nullptr;
+	BYTE *posImageTest = nullptr;
+	BYTE *negaImageTest = nullptr;
+	UINT posTraNum, posTestNum, negaTraNum, negaTestNum;
 
 	void RunConvolutionToPooling(UINT ind);
 	void RunPoolingToConvolution(UINT ind);
@@ -80,11 +84,15 @@ private:
 	void RunConvolutionToPoolingDetec(UINT ind);
 	void RunPoolingToConvolutionDetec(UINT ind);
 	void RunPoolingToNNDetec(UINT ind);
+	void RunConvolutionToPoolingTest(UINT ind);
+	void RunPoolingToConvolutionTest(UINT ind);
+	void RunPoolingToNNTest(UINT ind);
 	void NNToPoolingBackPropagation(UINT ind);
 	void ConvolutionToPoolingBackPropagation(UINT ind);
 	void PoolingToConvolutionBackPropagation(UINT ind);
 	void query();
 	void queryDetec();
+	void queryTest();
 	void searchPixel();
 
 public:
@@ -92,14 +100,16 @@ public:
 	~ImageRecognition();
 	void SetTarget(float *tar);
 	void SetLearningNum(UINT num);
-	void CreateLearningImagebyte();
+	void CreateLearningImagebyte(float RateOftrainImage);
 	void LearningByteImage();
+	void TestByteImage();//Training()å„Ç…é¿çsÇ∑ÇÈÇ±Ç∆
 	void LearningTexture();
 	void InputTexture(int Tno);
 	void InputPixel(BYTE *pix);
 	void Query();
-	void LearningDecay(float in);
+	void LearningDecay(float in, float scale);
 	void Training();
+	void Test();
 	void NNDraw();
 	void PODraw();
 	void CNDraw();
@@ -107,6 +117,7 @@ public:
 	void SPDraw();
 	int Geterrer();
 	int Getcurrout();
+	int Gettestout();
 	float Getcurrtar();
 	void textDraw(UINT stateNum, float x, float y);
 	void SaveData();
