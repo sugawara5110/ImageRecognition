@@ -71,7 +71,6 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	if (Type == 'C' || Type == 'D' || Type == 'S') {
 		cn[0] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 7, 2);
 		cn[0]->ComCreateSigmoid();
-		cn[0]->SetLearningLate(0.05f);
 		wid = cn[0]->GetOutWidth();
 		hei = cn[0]->GetOutHeight();
 		cn[0]->CreareNNTexture(7, 7, filNum);
@@ -104,7 +103,6 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	if (Type == 'D' || Type == 'S') {
 		cn[1] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 5, 1);
 		cn[1]->ComCreateSigmoid();
-		cn[1]->SetLearningLate(0.05f);
 		wid = cn[1]->GetOutWidth();
 		hei = cn[1]->GetOutHeight();
 		cn[1]->CreareNNTexture(5, 5, filNum);
@@ -131,7 +129,6 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	if (Type == 'S') {
 		cn[2] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 5, 1);
 		cn[2]->ComCreateSigmoid();
-		cn[2]->SetLearningLate(0.003f);
 		wid = cn[2]->GetOutWidth();
 		hei = cn[2]->GetOutHeight();
 		cn[2]->CreareNNTexture(5, 5, filNum);
@@ -324,14 +321,15 @@ void ImageRecognition::Query() {
 void ImageRecognition::LearningDecay(float in, float scale) {
 
 	float c = 0.05f * pow((1.0f - in), 3) * scale;
+	float c1 = 0.0005f * pow((1.0f - in), 3) * scale;
 	float n = 0.12f * (1.0f - in) * scale;
 
 	if (Type == 'C' || Type == 'D' || Type == 'S')
-		cn[0]->SetLearningLate(c);
+		cn[0]->SetLearningLate(c, c1);
 	if (Type == 'D' || Type == 'S')
-		cn[1]->SetLearningLate(c);
+		cn[1]->SetLearningLate(c, c1);
 	if (Type == 'S')
-		cn[2]->SetLearningLate(c);
+		cn[2]->SetLearningLate(c, c1);
 	nn->SetLearningLate(n);
 }
 

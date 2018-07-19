@@ -155,7 +155,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			if (cnt < 80000) {
 				//nn->LearningTexture();
 				nn->LearningByteImage();
-				nn->LearningDecay((float)cnt / 80000.0f, 1.0f);
+				nn->LearningDecay((float)cnt / 80000.0f, 0.5f);
 				nn->Training();
 				nn->TestByteImage();
 				nn->Test();
