@@ -56,12 +56,9 @@ private:
 	bool searchon;
 
 	UINT learTexNum = 0;
-	UINT learTexInd = 0;
-	UINT *learTexsepInd = nullptr;
-	UINT *learTexsepNum = nullptr;
 	UINT positivef = 0;
-	UINT posInd = 0;
-	UINT negaInd = 0;
+	UINT texPosNum = 0;
+	UINT ppmPosNum = 0;
 	UINT posNum = 0;
 	UINT negaNum = 0;
 	UINT poscnt = 0;
@@ -99,11 +96,10 @@ public:
 	ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT *numNode, int depth, UINT filNum, UCHAR type, bool searchOn, float Threshold);
 	~ImageRecognition();
 	void SetTarget(float *tar);
-	void SetLearningNum(UINT num);
-	void CreateLearningImagebyte(float RateOftrainImage);
+	void SetLearningNum(UINT texNum, UINT ppmNum);
+	void CreateLearningImagebyte(float RateOftrainImage, BYTE *ppm);
 	void LearningByteImage();
 	void TestByteImage();//Training()å„Ç…é¿çsÇ∑ÇÈÇ±Ç∆
-	void LearningTexture();
 	void InputTexture(int Tno);
 	void InputPixel(BYTE *pix);
 	void Query();

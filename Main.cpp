@@ -11,6 +11,7 @@
 #include "TextureLoader.h"
 #include "../../../Common/DirectShowWrapper\Camera.h"
 #include "Graph.h"
+#include "PPMLoader.h"
 #pragma comment(lib,"winmm.lib")
 
 //-------------------------------------------------------------
@@ -47,6 +48,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	text = DxText::GetInstance();
 	TextureLoader::TextureLoad();
 	Control *control;
+	PPMLoader *ppm = nullptr;
 	control = Control::GetInstance();
 	int learningImageNum = TextureLoader::GetLearningImageNum();
 	float *target = TextureLoader::GetLearningTarget();
@@ -134,9 +136,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				input[1] = 1;
 				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 8, 'D', searchOn, threshold);
 				nn->SetTarget(target);
-				nn->SetLearningNum(learningImageNum);
 				if (state == 1) {
-					nn->CreateLearningImagebyte(0.7f);
+					ppm = new PPMLoader(86, 86, 64, 64);
+					nn->SetLearningNum(learningImageNum, ppm->GetFileNum());
+					nn->CreateLearningImagebyte(0.7f, ppm->GetImageArr());
 					graph[0] = new Graph();
 					graph[0]->CreateGraph(100, 218, 256, 128, 256, 256);
 					graph[1] = new Graph();
@@ -153,9 +156,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		case 1:
 			//äwèK
 			if (cnt < 80000) {
-				//nn->LearningTexture();
 				nn->LearningByteImage();
-				nn->LearningDecay((float)cnt / 80000.0f, 0.5f);
+				nn->LearningDecay((float)cnt / 80000.0f, 1.0f);
 				nn->Training();
 				nn->TestByteImage();
 				nn->Test();
@@ -255,6 +257,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	S_DELETE(cam);
 	S_DELETE(graph[0]);
 	S_DELETE(graph[1]);
+	S_DELETE(ppm);
 	TextureLoader::DeleteTextureStruct();
 	DxText::DeleteInstance();
 	Dx12Process::DeleteInstance();
