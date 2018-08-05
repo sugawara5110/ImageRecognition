@@ -11,7 +11,7 @@ PPMLoader::PPMLoader(UINT inW, UINT inH, UINT outW, UINT outH) {
 	sf = new SearchFile(1);
 	char **str = new char*[1];
 	str[0] = "ppm";
-	sf->Search(L"LearningImage/CorrectFace/*", 0, str, 1);
+	sf->Search(L"LearningImage/CorrectFacePPM/*", 0, str, 1);
 	delete[]str;
 	str = nullptr;
 	fileNum = sf->GetFileNum(0);

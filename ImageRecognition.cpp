@@ -8,7 +8,7 @@
 #include "ImageRecognition.h"
 #include "TextureLoader.h"
 #define LEARTEXWID 64
-#define BADGENUM 8
+#define BADGENUM 16
 
 SP::SP(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, float outscale, UINT step, UINT outNum, float Threshold, bool searchOn) {
 	Sp = new SearchPixel(srcwid, srchei, seawid, seahei, outscale, step, outNum, Threshold);
@@ -70,7 +70,7 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	unsigned int hei = Height;
 	if (Type == 'C' || Type == 'D' || Type == 'S') {
 		cn[0] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 7, 2);
-		cn[0]->ComCreateSigmoid();
+		cn[0]->ComCreateReLU();
 		wid = cn[0]->GetOutWidth();
 		hei = cn[0]->GetOutHeight();
 		cn[0]->CreareNNTexture(7, 7, filNum);
@@ -102,7 +102,7 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	}
 	if (Type == 'D' || Type == 'S') {
 		cn[1] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 5, 1);
-		cn[1]->ComCreateSigmoid();
+		cn[1]->ComCreateReLU();
 		wid = cn[1]->GetOutWidth();
 		hei = cn[1]->GetOutHeight();
 		cn[1]->CreareNNTexture(5, 5, filNum);
@@ -128,7 +128,7 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 
 	if (Type == 'S') {
 		cn[2] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 5, 1);
-		cn[2]->ComCreateSigmoid();
+		cn[2]->ComCreateReLU();
 		wid = cn[2]->GetOutWidth();
 		hei = cn[2]->GetOutHeight();
 		cn[2]->CreareNNTexture(5, 5, filNum);
@@ -156,7 +156,7 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	numN[0] = wid * hei;
 	for (int i = 1; i < depth + 1; i++)numN[i] = numNode[i - 1];
 	nn = new DxNeuralNetwork(numN, depth + 1, filNum, SearchMaxNum);
-	nn->ComCreateSigmoid();
+	nn->ComCreateReLU();
 	nn->SetLearningLate(0.12f);
 	nn->CreareNNTexture(wid, hei, filNum);
 
@@ -320,7 +320,7 @@ void ImageRecognition::LearningDecay(float in, float scale) {
 
 	float c = 0.05f * pow((1.0f - in), 3) * scale;
 	float c1 = 0.0005f * pow((1.0f - in), 3) * scale;
-	float n = 0.12f * (1.0f - in) * scale;
+	float n = 0.01f * pow((1.0f - in), 3) * scale;
 
 	if (Type == 'C' || Type == 'D' || Type == 'S')
 		cn[0]->SetLearningLate(c, c1);

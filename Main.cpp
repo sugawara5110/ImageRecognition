@@ -134,7 +134,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				input = new UINT[2];
 				input[0] = 600;
 				input[1] = 1;
-				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 8, 'D', searchOn, threshold);
+				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 8, 'S', searchOn, threshold);
 				nn->SetTarget(target);
 				if (state == 1) {
 					ppm = new PPMLoader(86, 86, 64, 64);
