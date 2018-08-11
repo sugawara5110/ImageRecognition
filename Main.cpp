@@ -13,6 +13,7 @@
 #include "Graph.h"
 #include "PPMLoader.h"
 #pragma comment(lib,"winmm.lib")
+#define COUNT 80000
 
 //-------------------------------------------------------------
 // アプリケーションのエントリポイント
@@ -131,13 +132,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				}
 				enter = false;
 				dx->Bigin(0);
-				input = new UINT[2];
-				input[0] = 600;
-				input[1] = 1;
-				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 8, 'S', searchOn, threshold);
+				input = new UINT[3];
+				input[0] = 300;
+				input[1] = 300;
+				input[2] = 1;
+				nn = new ImageRecognition(512, 256, 64, 64, input, 3, 8, 'S', searchOn, threshold);
 				nn->SetTarget(target);
 				if (state == 1) {
-					ppm = new PPMLoader(86, 86, 64, 64);
+					ppm = new PPMLoader(64, 64);
 					nn->SetLearningNum(learningImageNum, ppm->GetFileNum());
 					nn->CreateLearningImagebyte(0.7f, ppm->GetImageArr());
 					graph[0] = new Graph();
@@ -155,9 +157,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		case 1:
 			//学習
-			if (cnt < 80000) {
+			if (cnt < COUNT) {
 				nn->LearningByteImage();
-				nn->LearningDecay((float)cnt / 80000.0f, 1.0f);
+				nn->LearningDecay((float)cnt / (float)COUNT, 2.0f);
 				nn->Training();
 				nn->TestByteImage();
 				nn->Test();
@@ -227,7 +229,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			nn->INDraw(0.0f, 0.0f, 0.0f, 0.0f);
 			nn->textDraw(state, 0.0f, 0.0f);
 			if (state == 1) {
-				float tmw = (float)cnt / 80000.0f * 255.0f;
+				float tmw = (float)cnt / (float)COUNT * 255.0f;
 				float tmh = (float)nn->Getcurrout() / 100.0f * 255.0f;
 				float tmhtes = (float)nn->Gettestout() / 100.0f * 255.0f;
 				if (nn->Getcurrtar() >= 0.5f) {

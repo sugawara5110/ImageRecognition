@@ -6,7 +6,7 @@
 
 #include "PPMLoader.h"
 
-PPMLoader::PPMLoader(UINT inW, UINT inH, UINT outW, UINT outH) {
+PPMLoader::PPMLoader(UINT outW, UINT outH) {
 
 	sf = new SearchFile(1);
 	char **str = new char*[1];
@@ -17,14 +17,34 @@ PPMLoader::PPMLoader(UINT inW, UINT inH, UINT outW, UINT outH) {
 	fileNum = sf->GetFileNum(0);
 	image = new BYTE[fileNum * outW * outH];
 
-	BYTE *tmpimage = new BYTE[inW * 3 * inH];
-	size_t size = sizeof(BYTE) * inW * 3 * inH;
-	long offset = inW * 3 * inH;
+	BYTE *tmpimage;
+	size_t size;
+	long offset;
 
 	for (UINT k = 0; k < fileNum; k++) {
 		FILE *fp = nullptr;
+		char line[200] = { 0 };//1行読み込み用
+		int inW = 0;
+		int inH = 0;
+		int pix = 0;
 		char *name = sf->GetFileName(0, k);
 		fopen_s(&fp, name, "rt");
+		fgets(line, sizeof(line), fp);//1行飛ばす
+		fgets(line, sizeof(line), fp);
+		if (line[0] == '#')fgets(line, sizeof(line), fp);//コメントだった場合
+		sscanf_s(line, "%d %d", &inW, &inH);
+		/*if (inW != 86 || inH != 86) {
+			MessageBoxA(0, "ppm読み込みエラー1", 0, MB_OK);
+		}*/
+		UINT inNum = inW * 3 * inW;
+		tmpimage = new BYTE[inNum];
+		size = sizeof(BYTE) * inNum;
+		offset = inNum;
+		fgets(line, sizeof(line), fp);
+		sscanf_s(line, "%d", &pix);
+		/*if (pix != 255) {
+			MessageBoxA(0, "ppm読み込みエラー2", 0, MB_OK);
+		}*/
 		fseek(fp, -offset, SEEK_END);
 		//ここからpixdata, RGBの順に1byteずつ1ピクセル3byte
 		fread(tmpimage, size, 1, fp);
@@ -40,8 +60,8 @@ PPMLoader::PPMLoader(UINT inW, UINT inH, UINT outW, UINT outH) {
 			}
 		}
 		fclose(fp);
+		ARR_DELETE(tmpimage);
 	}
-	ARR_DELETE(tmpimage);
 }
 
 PPMLoader::~PPMLoader() {

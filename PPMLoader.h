@@ -20,7 +20,7 @@ private:
 	PPMLoader() {}
 
 public:
-	PPMLoader(UINT inW, UINT inH, UINT outW, UINT outH);
+	PPMLoader(UINT outW, UINT outH);
 	~PPMLoader();
 	UINT GetFileNum();
 	BYTE *GetImageArr();

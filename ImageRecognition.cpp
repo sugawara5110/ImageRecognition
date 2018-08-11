@@ -8,7 +8,7 @@
 #include "ImageRecognition.h"
 #include "TextureLoader.h"
 #define LEARTEXWID 64
-#define BADGENUM 16
+#define BADGENUM 32
 
 SP::SP(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, float outscale, UINT step, UINT outNum, float Threshold, bool searchOn) {
 	Sp = new SearchPixel(srcwid, srchei, seawid, seahei, outscale, step, outNum, Threshold);
@@ -127,15 +127,15 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	}
 
 	if (Type == 'S') {
-		cn[2] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 5, 1);
+		cn[2] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 3, 1);
 		cn[2]->ComCreateReLU();
 		wid = cn[2]->GetOutWidth();
 		hei = cn[2]->GetOutHeight();
-		cn[2]->CreareNNTexture(5, 5, filNum);
+		cn[2]->CreareNNTexture(3, 3, filNum);
 
 		dcn[2].SetCommandList(0);
 		dcn[2].GetVBarray2D(1);
-		dcn[2].TextureInit(5, 5 * filNum);
+		dcn[2].TextureInit(3, 3 * filNum);
 		dcn[2].TexOn();
 		dcn[2].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 
@@ -333,9 +333,10 @@ void ImageRecognition::LearningDecay(float in, float scale) {
 
 void ImageRecognition::Training() {
 	query();
-	float *drop = new float[2];
+	float *drop = new float[3];
 	drop[0] = 0.0f;
-	drop[1] = 0.5f;
+	drop[1] = 0.0f;
+	drop[2] = 0.0f;
 	nn->SetdropThreshold(drop);
 	ARR_DELETE(drop);
 	nn->Training();
@@ -367,9 +368,10 @@ void ImageRecognition::Training() {
 
 void ImageRecognition::Test() {
 	queryTest();
-	float *drop = new float[2];
+	float *drop = new float[3];
 	drop[0] = 0.0f;
 	drop[1] = 0.0f;
+	drop[2] = 0.0f;
 	nn->SetdropThreshold(drop);
 	ARR_DELETE(drop);
 	nn->Test();
@@ -461,7 +463,7 @@ void ImageRecognition::CreateLearningImagebyte(float RateOftrainImage, BYTE *ppm
 
 	srand((unsigned)time(NULL));
 
-	BYTE *texPosImage = new BYTE[texPosNum * LEARTEXWID * LEARTEXWID];
+	BYTE *posImage = new BYTE[posNum * LEARTEXWID * LEARTEXWID];
 	BYTE *negaImage = new BYTE[negaNum * LEARTEXWID * LEARTEXWID];
 	int negaInd = 0;
 	int posInd = 0;
@@ -489,7 +491,7 @@ void ImageRecognition::CreateLearningImagebyte(float RateOftrainImage, BYTE *ppm
 							negaImage[negaInd++] = pt;
 						}
 						else {
-							texPosImage[posInd++] = pt;
+							posImage[posInd++] = pt;
 						}
 					}
 				}
@@ -499,15 +501,31 @@ void ImageRecognition::CreateLearningImagebyte(float RateOftrainImage, BYTE *ppm
 		GetTextureUp(i)->Unmap(0, nullptr);
 	}
 
-	//トレーニングデータ, テストデータを分ける
-	UINT texPosTraNum = texPosNum * RateOftrainImage;
-	UINT texPosTestNum = texPosNum - texPosTraNum;
-	UINT ppmPosTraNum = ppmPosNum * RateOftrainImage;
-	UINT ppmPosTestNum = ppmPosNum - ppmPosTraNum;
+	//ppmData付け足す
+	memcpy(&posImage[posInd], ppm, sizeof(BYTE) * ppmPosNum * LEARTEXWID * LEARTEXWID);
 
-	posTraNum = texPosTraNum + ppmPosTraNum;
+	//学習データシャッフル
+	BYTE tmp[LEARTEXWID * LEARTEXWID];
+	size_t tmpSize = sizeof(BYTE) * LEARTEXWID * LEARTEXWID;
+	for (UINT i = 0; i < posNum; i++) {
+		int ind1 = (rand() % posNum) * LEARTEXWID * LEARTEXWID;
+		int ind2 = (rand() % posNum) * LEARTEXWID * LEARTEXWID;
+		memcpy(tmp, &posImage[ind1], tmpSize);
+		memcpy(&posImage[ind1], &posImage[ind2], tmpSize);
+		memcpy(&posImage[ind2], tmp, tmpSize);
+	}
+	for (UINT i = 0; i < negaNum; i++) {
+		int ind1 = (rand() % negaNum) * LEARTEXWID * LEARTEXWID;
+		int ind2 = (rand() % negaNum) * LEARTEXWID * LEARTEXWID;
+		memcpy(tmp, &negaImage[ind1], tmpSize);
+		memcpy(&negaImage[ind1], &negaImage[ind2], tmpSize);
+		memcpy(&negaImage[ind2], tmp, tmpSize);
+	}
+
+	//トレーニングデータ, テストデータを分ける
+	posTraNum = posNum * RateOftrainImage;
+	posTestNum = posNum - posTraNum;
 	negaTraNum = negaNum * RateOftrainImage;
-	posTestNum = texPosTestNum + ppmPosTestNum;
 	negaTestNum = negaNum - negaTraNum;
 
 	posImageTrain = new BYTE[posTraNum * LEARTEXWID * LEARTEXWID];
@@ -515,20 +533,16 @@ void ImageRecognition::CreateLearningImagebyte(float RateOftrainImage, BYTE *ppm
 	negaImageTrain = new BYTE[negaTraNum * LEARTEXWID * LEARTEXWID];
 	negaImageTest = new BYTE[negaTestNum * LEARTEXWID * LEARTEXWID];
 
-	size_t texPosTraSize = sizeof(BYTE) * texPosTraNum * LEARTEXWID * LEARTEXWID;
-	size_t ppmPosTraSize = sizeof(BYTE) * ppmPosTraNum * LEARTEXWID * LEARTEXWID;
+	size_t posTraSize = sizeof(BYTE) * posTraNum * LEARTEXWID * LEARTEXWID;
 	size_t negaTraSize = sizeof(BYTE) * negaTraNum * LEARTEXWID * LEARTEXWID;
-	size_t texPosTestSize = sizeof(BYTE) * texPosTestNum * LEARTEXWID * LEARTEXWID;
-	size_t ppmPosTestSize = sizeof(BYTE) * ppmPosTestNum * LEARTEXWID * LEARTEXWID;
+	size_t posTestSize = sizeof(BYTE) * posTestNum * LEARTEXWID * LEARTEXWID;
 	size_t negaTestSize = sizeof(BYTE) * negaTestNum * LEARTEXWID * LEARTEXWID;
 
-	memcpy(posImageTrain, texPosImage, texPosTraSize);
-	memcpy(&posImageTrain[texPosTraSize], ppm, ppmPosTraSize);
+	memcpy(posImageTrain, posImage, posTraSize);
 	memcpy(negaImageTrain, negaImage, negaTraSize);
-	memcpy(posImageTest, &texPosImage[texPosTraSize], texPosTestSize);
-	memcpy(&posImageTest[texPosTestSize], &ppm[ppmPosTraSize], ppmPosTestSize);
+	memcpy(posImageTest, &posImage[posTraSize], posTestSize);
 	memcpy(negaImageTest, &negaImage[negaTraSize], negaTestSize);
-	ARR_DELETE(texPosImage);
+	ARR_DELETE(posImage);
 	ARR_DELETE(negaImage);
 }
 
@@ -565,13 +579,12 @@ void ImageRecognition::LearningByteImage() {
 			if (rev == 0)pixX = LEARTEXWID - (i % LEARTEXWID) - 1;
 			UINT pixY = i / LEARTEXWID;
 
-			UINT traInd = LEARTEXWID * pixY + pixX;
 			float el;
 			if (positivef == 0) {
-				el = ((float)posImageTrain[traInd + imInd] / 255.0f * 0.99f) + 0.01f;
+				el = ((float)posImageTrain[i + imInd] / 255.0f * 0.99f) + 0.01f;
 			}
 			else {
-				el = ((float)negaImageTrain[traInd + imInd] / 255.0f * 0.99f) + 0.01f;
+				el = ((float)negaImageTrain[i + imInd] / 255.0f * 0.99f) + 0.01f;
 			}
 
 			pixIn[0][pixY][pixX] = ((UINT)(el * 255.0f) << 16) + ((UINT)(el * 255.0f) << 8) + ((UINT)(el * 255.0f));
