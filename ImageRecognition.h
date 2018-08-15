@@ -9,6 +9,8 @@
 
 #include "../../../Common/Direct3DWrapper/Dx_NN.h"
 #include "../../../Common/Direct3DWrapper/DxText.h"
+#define LEARTEXWID 64
+#define BADGENUM 32
 
 class SP {
 
@@ -68,6 +70,10 @@ private:
 	int errer = 0;
 	int currout = 0;
 	int testOut = 0;
+	int testCountp = 0;
+	int testOutpArr[BADGENUM] = { 0 };
+	int testCountn = 0;
+	int testOutnArr[BADGENUM] = { 0 };
 
 	BYTE *posImageTrain = nullptr;
 	BYTE *negaImageTrain = nullptr;

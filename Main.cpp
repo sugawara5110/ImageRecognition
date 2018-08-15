@@ -75,6 +75,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	while (1) {//アプリ実行中ループ
 		if (!DispatchMSG(&msg))break;
 		Directionkey key = control->Direction();
+		T_float::GetTime(hWnd);
 		switch (key) {
 		case UP:
 			if (select == 0)break;

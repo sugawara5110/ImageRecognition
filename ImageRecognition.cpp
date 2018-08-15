@@ -7,8 +7,6 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include "ImageRecognition.h"
 #include "TextureLoader.h"
-#define LEARTEXWID 64
-#define BADGENUM 32
 
 SP::SP(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, float outscale, UINT step, UINT outNum, float Threshold, bool searchOn) {
 	Sp = new SearchPixel(srcwid, srchei, seawid, seahei, outscale, step, outNum, Threshold);
@@ -318,7 +316,7 @@ void ImageRecognition::Query() {
 
 void ImageRecognition::LearningDecay(float in, float scale) {
 
-	float c = 0.05f * pow((1.0f - in), 3) * scale;
+	float c = 0.10f * pow((1.0f - in), 3) * scale;
 	float c1 = 0.0005f * pow((1.0f - in), 3) * scale;
 	float n = 0.01f * pow((1.0f - in), 3) * scale;
 
@@ -335,7 +333,7 @@ void ImageRecognition::Training() {
 	query();
 	float *drop = new float[3];
 	drop[0] = 0.0f;
-	drop[1] = 0.0f;
+	drop[1] = 0.1f;
 	drop[2] = 0.0f;
 	nn->SetdropThreshold(drop);
 	ARR_DELETE(drop);
@@ -363,7 +361,10 @@ void ImageRecognition::Training() {
 		PoolingToConvolutionBackPropagation(0);
 	}
 
-	currout = nn->GetOutputEl(0) * 100.0f;
+	currout = 0;
+	for (int i = 0; i < BADGENUM; i++)
+		currout += nn->GetOutputEl(0, i) * 100.0f;
+	currout /= BADGENUM;
 }
 
 void ImageRecognition::Test() {
@@ -376,7 +377,24 @@ void ImageRecognition::Test() {
 	ARR_DELETE(drop);
 	nn->Test();
 
-	testOut = nn->GetOutputEl(0) * 100.0f;
+	if (currentTarget == 0.99f) {
+		testCountp = testCountp % BADGENUM;
+		testOutpArr[testCountp] = nn->GetOutputEl(0) * 100.0f;
+		int sum = 0;
+		for (int i = 0; i < BADGENUM; i++)
+			sum += testOutpArr[i];
+		testOut = sum / BADGENUM;
+		testCountp++;
+	}
+	else {
+		testCountn = testCountn % BADGENUM;
+		testOutnArr[testCountn] = nn->GetOutputEl(0) * 100.0f;
+		int sum = 0;
+		for (int i = 0; i < BADGENUM; i++)
+			sum += testOutnArr[i];
+		testOut = sum / BADGENUM;
+		testCountn++;
+	}
 }
 
 void ImageRecognition::RunConvolutionToPooling(UINT ind) {
