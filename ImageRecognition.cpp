@@ -317,15 +317,15 @@ void ImageRecognition::Query() {
 void ImageRecognition::LearningDecay(float in, float scale) {
 
 	float c = 0.10f * pow((1.0f - in), 3) * scale;
-	float c1 = 0.0005f * pow((1.0f - in), 3) * scale;
-	float n = 0.01f * pow((1.0f - in), 3) * scale;
+	float c1 = 0.01f * pow((1.0f - in), 3) * scale;
+	float n = 0.05f * pow((1.0f - in), 3) * scale;
 
 	if (Type == 'C' || Type == 'D' || Type == 'S')
-		cn[0]->SetLearningLate(c, c1);
+		cn[0]->SetLearningLate(c, 0);
 	if (Type == 'D' || Type == 'S')
-		cn[1]->SetLearningLate(c, c1);
+		cn[1]->SetLearningLate(c, 0);
 	if (Type == 'S')
-		cn[2]->SetLearningLate(c, c1);
+		cn[2]->SetLearningLate(c, 0);
 	nn->SetLearningLate(n);
 }
 
@@ -605,7 +605,7 @@ void ImageRecognition::LearningByteImage() {
 				el = ((float)negaImageTrain[i + imInd] / 255.0f * 0.99f) + 0.01f;
 			}
 
-			pixIn[0][pixY][pixX] = ((UINT)(el * 255.0f) << 16) + ((UINT)(el * 255.0f) << 8) + ((UINT)(el * 255.0f));
+			if (positivef == 0)pixIn[0][pixY][pixX] = ((UINT)(el * 255.0f) << 16) + ((UINT)(el * 255.0f) << 8) + ((UINT)(el * 255.0f));
 
 			switch (Type) {
 			case 'C':

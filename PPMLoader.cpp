@@ -51,9 +51,8 @@ PPMLoader::PPMLoader(UINT outW, UINT outH) {
 		//サイズ変換, グレースケール変換
 		for (UINT y = 0; y < outH; y++) {
 			for (UINT x = 0; x < outW; x++) {
-
-				UINT inHeiInd = inW * 3 * (inH / outH * y);
-				UINT inWidInd = inW / outW * x * 3;
+				UINT inHeiInd = (UINT)((float)inH / outH * y) * inW * 3;
+				UINT inWidInd = (float)inW / outW * x * 3;
 				UINT inInd = inHeiInd + inWidInd;
 				BYTE gray = (tmpimage[inInd] + tmpimage[inInd + 1] + tmpimage[inInd + 2]) / 3;//grayscale
 				image[outH * outW * k + outW * y + x] = gray;

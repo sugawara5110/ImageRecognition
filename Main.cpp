@@ -134,10 +134,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				enter = false;
 				dx->Bigin(0);
 				input = new UINT[3];
-				input[0] = 300;
-				input[1] = 300;
+				input[0] = 50;
+				input[1] = 10;
 				input[2] = 1;
-				nn = new ImageRecognition(512, 256, 64, 64, input, 3, 8, 'S', searchOn, threshold);
+				nn = new ImageRecognition(512, 256, 64, 64, input, 3, 16, 'S', searchOn, threshold);
 				nn->SetTarget(target);
 				if (state == 1) {
 					ppm = new PPMLoader(64, 64);
@@ -150,7 +150,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				}
 				dx->End(0);
 				dx->WaitFenceCurrent();
-				if (state == 2)nn->LoadData();
+				/*if(state == 2)*/nn->LoadData();
 			}
 			DxText::GetInstance()->UpDateText(L"学習モード ", 100.0f, 100.0f, 15.0f, { 0.3f, 0.3f, br0, 1.0f });
 			DxText::GetInstance()->UpDateText(L"検出モード テクスチャテスト", 100.0f, 120.0f, 15.0f, { 0.3f, 0.3f, br1, 1.0f });
@@ -160,7 +160,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			//学習
 			if (cnt < COUNT) {
 				nn->LearningByteImage();
-				nn->LearningDecay((float)cnt / (float)COUNT, 2.0f);
+				nn->LearningDecay((float)cnt / (float)COUNT, 1.0f);
 				nn->Training();
 				nn->TestByteImage();
 				nn->Test();
