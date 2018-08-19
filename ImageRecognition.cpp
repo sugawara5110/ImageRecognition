@@ -67,7 +67,7 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	unsigned int wid = Width;
 	unsigned int hei = Height;
 	if (Type == 'C' || Type == 'D' || Type == 'S') {
-		cn[0] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 7, 2);
+		cn[0] = new DxConvolution(wid, hei, filNum, SearchMaxNum, 7, 1);
 		cn[0]->ComCreateReLU();
 		wid = cn[0]->GetOutWidth();
 		hei = cn[0]->GetOutHeight();

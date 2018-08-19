@@ -6,12 +6,12 @@
 
 #include "PPMLoader.h"
 
-PPMLoader::PPMLoader(UINT outW, UINT outH) {
+PPMLoader::PPMLoader(wchar_t *pass, UINT outW, UINT outH) {
 
 	sf = new SearchFile(1);
 	char **str = new char*[1];
 	str[0] = "ppm";
-	sf->Search(L"LearningImage/CorrectFacePPM/*", 0, str, 1);
+	sf->Search(pass, 0, str, 1);
 	delete[]str;
 	str = nullptr;
 	fileNum = sf->GetFileNum(0);
@@ -20,6 +20,7 @@ PPMLoader::PPMLoader(UINT outW, UINT outH) {
 	BYTE *tmpimage;
 	size_t size;
 	long offset;
+	UINT fileCount = 0;
 
 	for (UINT k = 0; k < fileNum; k++) {
 		FILE *fp = nullptr;
@@ -33,18 +34,12 @@ PPMLoader::PPMLoader(UINT outW, UINT outH) {
 		fgets(line, sizeof(line), fp);
 		if (line[0] == '#')fgets(line, sizeof(line), fp);//コメントだった場合
 		sscanf_s(line, "%d %d", &inW, &inH);
-		/*if (inW != 86 || inH != 86) {
-			MessageBoxA(0, "ppm読み込みエラー1", 0, MB_OK);
-		}*/
 		UINT inNum = inW * 3 * inW;
 		tmpimage = new BYTE[inNum];
 		size = sizeof(BYTE) * inNum;
 		offset = inNum;
 		fgets(line, sizeof(line), fp);
 		sscanf_s(line, "%d", &pix);
-		/*if (pix != 255) {
-			MessageBoxA(0, "ppm読み込みエラー2", 0, MB_OK);
-		}*/
 		fseek(fp, -offset, SEEK_END);
 		//ここからpixdata, RGBの順に1byteずつ1ピクセル3byte
 		fread(tmpimage, size, 1, fp);
@@ -55,9 +50,10 @@ PPMLoader::PPMLoader(UINT outW, UINT outH) {
 				UINT inWidInd = (float)inW / outW * x * 3;
 				UINT inInd = inHeiInd + inWidInd;
 				BYTE gray = (tmpimage[inInd] + tmpimage[inInd + 1] + tmpimage[inInd + 2]) / 3;//grayscale
-				image[outH * outW * k + outW * y + x] = gray;
+				image[outH * outW * fileCount + outW * y + x] = gray;
 			}
 		}
+		fileCount++;
 		fclose(fp);
 		ARR_DELETE(tmpimage);
 	}

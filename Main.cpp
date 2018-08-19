@@ -137,10 +137,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				input[0] = 50;
 				input[1] = 10;
 				input[2] = 1;
-				nn = new ImageRecognition(512, 256, 64, 64, input, 3, 16, 'S', searchOn, threshold);
+				nn = new ImageRecognition(512, 256, 64, 64, input, 3, 20, 'S', searchOn, threshold);
 				nn->SetTarget(target);
 				if (state == 1) {
-					ppm = new PPMLoader(64, 64);
+					ppm = new PPMLoader(L"../../gazou/faceData/2003/*", 64, 64);
 					nn->SetLearningNum(learningImageNum, ppm->GetFileNum());
 					nn->CreateLearningImagebyte(0.7f, ppm->GetImageArr());
 					graph[0] = new Graph();
@@ -160,7 +160,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			//äwèK
 			if (cnt < COUNT) {
 				nn->LearningByteImage();
-				nn->LearningDecay((float)cnt / (float)COUNT, 1.0f);
+				nn->LearningDecay((float)cnt / (float)COUNT, 0.5f);
 				nn->Training();
 				nn->TestByteImage();
 				nn->Test();
