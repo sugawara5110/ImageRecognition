@@ -9,7 +9,6 @@
 
 #include "../../../Common/Direct3DWrapper/Dx_NN.h"
 #include "../../../Common/Direct3DWrapper/DxText.h"
-#define LEARTEXWID 64
 #define BADGENUM 32
 
 class SP {
@@ -70,6 +69,7 @@ private:
 	int errer = 0;
 	int currout = 0;
 	int testOut = 0;
+	int testOut1 = 0;
 	int testCountp = 0;
 	int testOutpArr[BADGENUM] = { 0 };
 	int testCountn = 0;
@@ -97,6 +97,8 @@ private:
 	void queryDetec();
 	void queryTest();
 	void searchPixel();
+	void LearningImagebyteContrastAdjustment(BYTE *arr, UINT imageNum);
+	void searchPixelContrastAdjustment(float *arr, float max, float min);
 
 public:
 	ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT *numNode, int depth, UINT filNum, UCHAR type, bool searchOn, float Threshold);
@@ -120,10 +122,13 @@ public:
 	int Geterrer();
 	int Getcurrout();
 	int Gettestout();
+	int Gettestout1();
 	float Getcurrtar();
 	void textDraw(UINT stateNum, float x, float y);
 	void SaveData();
 	void LoadData();
+	void SaveDataSet();
+	bool LoadDataSet();
 };
 
 #endif

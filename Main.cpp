@@ -133,16 +133,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				}
 				enter = false;
 				dx->Bigin(0);
-				input = new UINT[3];
-				input[0] = 50;
-				input[1] = 10;
-				input[2] = 1;
-				nn = new ImageRecognition(512, 256, 64, 64, input, 3, 20, 'S', searchOn, threshold);
+				input = new UINT[2];
+				input[0] = 64;
+				input[1] = 1;
+				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 20, 'S', searchOn, threshold);
 				nn->SetTarget(target);
 				if (state == 1) {
-					ppm = new PPMLoader(L"../../gazou/faceData/2003/*", 64, 64);
-					nn->SetLearningNum(learningImageNum, ppm->GetFileNum());
-					nn->CreateLearningImagebyte(0.7f, ppm->GetImageArr());
+					if (!nn->LoadDataSet()) {
+						ppm = new PPMLoader(L"../../gazou/faceData/*", 64, 64);
+						nn->SetLearningNum(learningImageNum, ppm->GetFileNum());
+						nn->CreateLearningImagebyte(0.7f, ppm->GetImageArr());
+					}
 					graph[0] = new Graph();
 					graph[0]->CreateGraph(100, 218, 256, 128, 256, 256);
 					graph[1] = new Graph();
@@ -150,7 +151,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				}
 				dx->End(0);
 				dx->WaitFenceCurrent();
-				/*if(state == 2)*/nn->LoadData();
+				if (state == 2)nn->LoadData();
 			}
 			DxText::GetInstance()->UpDateText(L"学習モード ", 100.0f, 100.0f, 15.0f, { 0.3f, 0.3f, br0, 1.0f });
 			DxText::GetInstance()->UpDateText(L"検出モード テクスチャテスト", 100.0f, 120.0f, 15.0f, { 0.3f, 0.3f, br1, 1.0f });
@@ -160,7 +161,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			//学習
 			if (cnt < COUNT) {
 				nn->LearningByteImage();
-				nn->LearningDecay((float)cnt / (float)COUNT, 0.5f);
+				nn->LearningDecay((float)cnt / (float)COUNT, 3.105f);
 				nn->Training();
 				nn->TestByteImage();
 				nn->Test();
@@ -171,6 +172,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				cancel = false;
 				state = 0;
 				nn->SaveData();
+				nn->SaveDataSet();
 				ARR_DELETE(input);
 				S_DELETE(nn);
 				S_DELETE(graph[0]);
@@ -232,13 +234,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			if (state == 1) {
 				float tmw = (float)cnt / (float)COUNT * 255.0f;
 				float tmh = (float)nn->Getcurrout() / 100.0f * 255.0f;
+				float tmhtes1 = (float)nn->Gettestout1() / 100.0f * 255.0f;
 				float tmhtes = (float)nn->Gettestout() / 100.0f * 255.0f;
 				if (nn->Getcurrtar() >= 0.5f) {
 					graph[0]->SetData((int)tmw, (int)tmh, 0xffffffff);
+					graph[1]->SetData((int)tmw, (int)tmhtes1, 0xff00ffff);
 					graph[1]->SetData((int)tmw, (int)tmhtes, 0xffffffff);
 				}
 				else {
 					graph[0]->SetData((int)tmw, (int)tmh, 0xff0000ff);
+					graph[1]->SetData((int)tmw, (int)tmhtes1, 0xff00ff00);
 					graph[1]->SetData((int)tmw, (int)tmhtes, 0xff0000ff);
 				}
 				graph[0]->Draw();
