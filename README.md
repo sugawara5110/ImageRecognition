@@ -1,6 +1,6 @@
 人工知能による、顏検出実験中です。
 
-Direct3DCompute Shaderを使用している、
+Direct3DCompute Shaderを使用した、
 
 自作人工知能ライブラリを使用しています。
 
