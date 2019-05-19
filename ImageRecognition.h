@@ -84,15 +84,19 @@ private:
 	void RunConvolutionToPooling(UINT ind);
 	void RunPoolingToConvolution(UINT ind);
 	void RunPoolingToNN(UINT ind);
+
 	void RunConvolutionToPoolingDetec(UINT ind);
 	void RunPoolingToConvolutionDetec(UINT ind);
 	void RunPoolingToNNDetec(UINT ind);
+
 	void RunConvolutionToPoolingTest(UINT ind);
 	void RunPoolingToConvolutionTest(UINT ind);
 	void RunPoolingToNNTest(UINT ind);
+
 	void NNToPoolingBackPropagation(UINT ind);
 	void ConvolutionToPoolingBackPropagation(UINT ind);
 	void PoolingToConvolutionBackPropagation(UINT ind);
+
 	void query();
 	void queryDetec();
 	void queryTest();

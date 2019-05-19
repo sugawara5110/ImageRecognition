@@ -5,7 +5,6 @@
 //*****************************************************************************************//
 
 #include "../../../Common/Window/Win.h"
-#include "../../../Common/Direct3DWrapper/Dx12Process.h"
 #include "../../../Common/Direct3DWrapper/DxText.h"
 #include "ImageRecognition.h"
 #include "TextureLoader.h"
@@ -30,9 +29,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	HWND hWnd;
 	MSG msg;
 	//DirectX12ラッパー
-	Dx12Process *dx;
+	Dx12Process* dx;
 	//文字入力
-	DxText *text;
+	DxText* text;
 
 	Createwindow(&hWnd, hInstance, nCmdShow, 900, 600, L"ImageDetection");
 
@@ -41,28 +40,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//Dx11Processオブジェクト取得
 	dx = Dx12Process::GetInstance();
 	dx->Initialize(hWnd, 900, 600);
-	Camera *cam = nullptr;
+	Camera* cam = nullptr;
 	//test
 	//Movie mov("aaa.avi");
 	bool camOn = false;
 	DxText::InstanceCreate();
 	text = DxText::GetInstance();
 	TextureLoader::TextureLoad();
-	Control *control;
-	PPMLoader *ppm = nullptr;
+	Control* control;
+	PPMLoader* ppm = nullptr;
 	control = Control::GetInstance();
 	int learningImageNum = TextureLoader::GetLearningImageNum();
-	float *target = TextureLoader::GetLearningTarget();
+	float* target = TextureLoader::GetLearningTarget();
 
 	dx->Bigin(0);
 	Dx12Process::GetInstance()->GetTexture(0);
 	dx->End(0);
 	dx->WaitFenceCurrent();
 
-	UINT *input = nullptr;
-	ImageRecognition *nn = nullptr;;
+	UINT* input = nullptr;
+	ImageRecognition* nn = nullptr;;
 	int cnt = 0;
-	Graph *graph[2] = { nullptr };
+	Graph* graph[2] = { nullptr };
 	UINT state = 0;//0:タイトル, 1:学習モード, 2:検出モード
 	UINT select = 0;
 	bool enter = false;
@@ -161,7 +160,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			//学習
 			if (cnt < COUNT) {
 				nn->LearningByteImage();
-				nn->LearningDecay((float)cnt / (float)COUNT, 3.105f);
+				nn->LearningDecay((float)cnt / (float)COUNT, 3.0f);
 				nn->Training();
 				nn->TestByteImage();
 				nn->Test();
@@ -238,7 +237,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				float tmhtes = (float)nn->Gettestout() / 100.0f * 255.0f;
 				if (nn->Getcurrtar() >= 0.5f) {
 					graph[0]->SetData((int)tmw, (int)tmh, 0xffffffff);
-					graph[1]->SetData((int)tmw, (int)tmhtes1, 0xff00ffff);
+					graph[1]->SetData((int)tmw, (int)tmhtes1, 0xff808080);
 					graph[1]->SetData((int)tmw, (int)tmhtes, 0xffffffff);
 				}
 				else {

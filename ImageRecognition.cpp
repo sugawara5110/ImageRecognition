@@ -333,7 +333,7 @@ void ImageRecognition::Training() {
 	query();
 	float *drop = new float[3];
 	drop[0] = 0.0f;
-	drop[1] = 0.0f;
+	drop[1] = 0.1f;
 	drop[2] = 0.0f;
 	nn->SetdropThreshold(drop);
 	ARR_DELETE(drop);
@@ -564,7 +564,7 @@ void ImageRecognition::CreateLearningImagebyte(float RateOftrainImage, BYTE *ppm
 	ARR_DELETE(posImage);
 	ARR_DELETE(negaImage);
 
-	LearningImagebyteContrastAdjustment(posImageTrain, posTraNum);
+	//LearningImagebyteContrastAdjustment(posImageTrain, posTraNum);
 	LearningImagebyteContrastAdjustment(posImageTest, posTestNum);
 }
 
@@ -687,12 +687,12 @@ void ImageRecognition::searchPixel() {
 	UINT seaNum = sp[spInd]->SearchMaxNum;
 	float *oneImage = new float[Width * Height];
 
-	float max = 0.0f;
+/*	float max = 0.0f;
 	float min = 1.0f;
 	for (int i = 0; i < seaNum * Width * Height; i++) {
 		if (sp[spInd]->Sp->GetOutputEl(i) > max)max = sp[spInd]->Sp->GetOutputEl(i);
 		if (sp[spInd]->Sp->GetOutputEl(i) < min)min = sp[spInd]->Sp->GetOutputEl(i);
-	}
+	}*/
 	UINT cnt = 0;
 	UINT seacnt = 0;
 	for (UINT k = 0; k < seaNum; k++) {
@@ -703,6 +703,14 @@ void ImageRecognition::searchPixel() {
 		}
 		sp[spInd]->SearchOutInd[k] = k;
 		for (UINT i = 0; i < Width * Height; i++)oneImage[i] = sp[spInd]->Sp->GetOutputEl(cnt++);
+		//test
+		float max = 0.0f;
+		float min = 1.0f;
+		for (int i = 0; i < Width * Height; i++) {
+			if (oneImage[i] > max)max = oneImage[i];
+			if (oneImage[i] < min)min = oneImage[i];
+		}
+		//test
 		searchPixelContrastAdjustment(oneImage, max, min);
 		for (UINT i = 0; i < Width * Height; i++) {
 			float el = oneImage[i];

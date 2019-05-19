@@ -43,6 +43,6 @@ void Graph::SetData(int cnt, int data, UINT col) {
 
 void Graph::Draw() {
 	graph->Update(0, 0, 0, 0, 0, 0, 0, 1.0f, 1.0f);
-	graph->SetTextureMPixel(point, 0xff, 0xff, 0xff, 0xff);
+	graph->SetTextureMPixel(point, 0xff, 0xff, 0xff, 0xff, 0);
 	graph->Draw();
 }
