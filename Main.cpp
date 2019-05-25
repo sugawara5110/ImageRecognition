@@ -199,7 +199,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				testNum++;
 			}
 			if (testNum >= TextureLoader::GetTestImageNum())testNum = 0;
-			nn->Query();
+			nn->QueryGradCAM();
 			if (cancel) {
 				cancel = false;
 				state = 0;

@@ -47,7 +47,7 @@ SP::~SP() {
 	ARR_DELETE(SearchOutInd);
 }
 
-ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT *numNode, int depth, UINT filnum, UCHAR type, bool searchOn, float threshold) {
+ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT* numNode, int depth, UINT filnum, UCHAR type, bool searchOn, float threshold) {
 
 	Threshold = threshold;
 	Width = width;
@@ -59,7 +59,7 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	searchon = searchOn;
 
 	sp[0] = new SP(InW, InH, Width, Height, 1.0f, 16, numNode[depth - 1], Threshold, searchOn);
-	sp[1] = new SP(InW, InH, Width * 1.5, Height * 1.5, 0.67f, 24, numNode[depth - 1], Threshold, searchOn);
+	sp[1] = new SP(InW, InH, Width * 1.5, Height * 1.5, 0.666667f, 24, numNode[depth - 1], Threshold, searchOn);
 	sp[2] = new SP(InW, InH, Width * 2, Height * 2, 0.5f, 32, numNode[depth - 1], Threshold, searchOn);
 
 	SearchMaxNum = sp[0]->SearchMaxNum;
@@ -129,6 +129,13 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 		cn[2]->ComCreateReLU();
 		wid = cn[2]->GetOutWidth();
 		hei = cn[2]->GetOutHeight();
+		gc = new DxGradCAM(wid, hei, 3 * 3, filNum, SearchMaxNum);
+		gc->ComCreate(InW, InH, 10.0f);
+		dgc.SetCommandList(0);
+		dgc.GetVBarray2D(1);
+		dgc.TextureInit(InW, InH);
+		dgc.TexOn();
+		dgc.CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 		cn[2]->CreareNNTexture(3, 3, filNum);
 
 		dcn[2].SetCommandList(0);
@@ -178,9 +185,9 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 		din[i].TexOn();
 		din[i].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 	}
-	pixIn = new UINT**[p2dNum];
+	pixIn = new UINT * *[p2dNum];
 	for (UINT i = 0; i < p2dNum; i++) {
-		pixIn[i] = new UINT*[Height];
+		pixIn[i] = new UINT * [Height];
 	}
 	for (UINT i = 0; i < p2dNum; i++) {
 		for (UINT k = 0; k < Height; k++) {
@@ -215,6 +222,7 @@ ImageRecognition::~ImageRecognition() {
 	S_DELETE(sp[0]);
 	S_DELETE(sp[1]);
 	S_DELETE(sp[2]);
+	S_DELETE(gc);
 	ARR_DELETE(din);
 	ARR_DELETE(posImageTrain);
 	ARR_DELETE(negaImageTrain);
@@ -312,6 +320,55 @@ void ImageRecognition::Query() {
 		for (int i = 0; i < sp[spInd]->SearchMaxNum; i++)sp[spInd]->Searchflg[i] = true;
 		sp[spInd]->Search10cnt = 0;
 	}
+}
+
+void ImageRecognition::QueryGradCAM() {
+	queryDetec();
+	gc->SetFeatureMap(cn[2]->GetOutputResource());//ÅIConv‚Ìo—Í‚ð‹L˜^()
+	nn->SetTargetEl(0.99f, 0);
+	nn->QueryAndBackPropagation(sp[spInd]->SearchNum);//ƒtƒBƒ‹ƒ^[XV–³‚µ‚Ì‹t“`”d
+	NNToPoolingBackPropagation(2);
+	cn[2]->SetInErrorResource(po[2]->GetOutErrorResource());
+	cn[2]->BackPropagationNoWeightUpdate();//ƒtƒBƒ‹ƒ^[XV–³‚µ‚Ì‹t“`”d
+	gc->SetGradient(cn[2]->GetGradient());//
+	gc->ComGAP();
+	gc->ComGradCAM(sp[spInd]->SearchNum);
+	UINT srcMap = 64;
+	UINT mapsli = 1;
+	switch (spInd) {
+	case 0:
+		srcMap = 64;
+		mapsli = 16;
+		break;
+	case 1:
+		srcMap = 96;
+		mapsli = 24;
+		break;
+	case 2:
+		srcMap = 128;
+		mapsli = 32;
+		break;
+	}
+	gc->GradCAMSynthesis(srcMap, srcMap, mapsli);
+
+	UINT cnt = 0;
+	for (int i = 0; i < sp[spInd]->SearchMaxNum; i++) {
+		if (sp[spInd]->SearchOutInd[i] == -1)continue;
+		sp[spInd]->out[i] = nn->GetOutputEl(0, cnt);
+		if (sp[spInd]->out[i] < Threshold)sp[spInd]->Searchflg[i] = false;
+		cnt++;
+	}
+
+	sp[spInd]->Sp->SetNNoutput(sp[spInd]->out);
+	sp[spInd]->Sp->TextureDraw();
+
+	sp[spInd]->Search10cnt++;
+	if (sp[spInd]->Search10cnt > 3) {
+		for (int i = 0; i < sp[spInd]->SearchMaxNum; i++)sp[spInd]->Searchflg[i] = true;
+		sp[spInd]->Search10cnt = 0;
+	}
+	//tert
+	for (int i = 0; i < sp[spInd]->SearchMaxNum; i++)sp[spInd]->Searchflg[i] = true;
 }
 
 void ImageRecognition::LearningDecay(float in, float scale) {
@@ -749,7 +806,7 @@ void ImageRecognition::InputTexture(int Tno) {
 	if (spInd > 2)spInd = 0;
 	D3D12_SUBRESOURCE_DATA texResource;
 	GetTextureUp(Tno)->Map(0, nullptr, reinterpret_cast<void**>(&texResource));
-	UCHAR *ptex = (UCHAR*)texResource.pData;
+	UCHAR* ptex = (UCHAR*)texResource.pData;
 	for (UINT i = 0; i < InW * InH; i++) {
 		UCHAR tmp = (ptex[i * 4] + ptex[i * 4 + 1] + ptex[i * 4 + 2]) / 3;
 		sp[spInd]->spPix[i] = ((float)tmp / 255.0f * 0.99f) + 0.01f;
@@ -757,10 +814,11 @@ void ImageRecognition::InputTexture(int Tno) {
 	GetTextureUp(Tno)->Unmap(0, nullptr);
 
 	sp[spInd]->Sp->SetPixel3ch(GetTexture(Tno));
+	gc->SetPixel3ch(GetTexture(Tno));
 	searchPixel();
 }
 
-void ImageRecognition::InputPixel(BYTE *pix) {
+void ImageRecognition::InputPixel(BYTE* pix) {
 	spInd++;
 	if (spInd > 2)spInd = 0;
 	for (UINT i = 0; i < InW * InH; i++) {
@@ -769,6 +827,7 @@ void ImageRecognition::InputPixel(BYTE *pix) {
 	}
 
 	sp[spInd]->Sp->SetPixel3ch(pix);
+	gc->SetPixel3ch(pix);
 	searchPixel();
 }
 
@@ -830,12 +889,15 @@ void ImageRecognition::INDraw(float x, float y, float xsize, float ysize) {
 }
 
 void ImageRecognition::SPDraw() {
-	sp[spInd]->dsp[0].Update(50.0f, 200.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 300.0f, 200.0f);
+	/*sp[spInd]->dsp[0].Update(50.0f, 200.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 300.0f, 200.0f);
 	sp[spInd]->dsp[0].CopyResource(sp[spInd]->Sp->GetNNTextureResource(), sp[spInd]->Sp->GetNNTextureResourceStates());
-	sp[spInd]->dsp[0].Draw();
+	sp[spInd]->dsp[0].Draw();*/
 	sp[spInd]->dsp[1].Update(350.0f, 200.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 300.0f, 200.0f);
 	sp[spInd]->dsp[1].CopyResource(sp[spInd]->Sp->GetOutputResource(), sp[spInd]->Sp->GetNNTextureResourceStates());
 	sp[spInd]->dsp[1].Draw();
+	dgc.Update(50.0f, 200.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 300.0f, 200.0f);
+	dgc.CopyResource(gc->GetPixel(), gc->GetNNTextureResourceStates());
+	dgc.Draw();
 }
 
 void ImageRecognition::textDraw(UINT stateNum, float x, float y) {

@@ -31,15 +31,17 @@ public:
 class ImageRecognition : public PolygonData2D {
 
 private:
-	DxNeuralNetwork * nn = nullptr;
-	DxPooling *po[3] = { nullptr };
-	DxConvolution *cn[3] = { nullptr };
-	SP *sp[3] = { nullptr };
+	DxNeuralNetwork* nn = nullptr;
+	DxPooling* po[3] = { nullptr };
+	DxConvolution* cn[3] = { nullptr };
+	SP* sp[3] = { nullptr };
+	DxGradCAM* gc = nullptr;
+	PolygonData2D dgc;
 	UINT spInd = 0;
 	UINT InW;
 	UINT InH;
 
-	UINT *numN = nullptr;
+	UINT* numN = nullptr;
 	UINT Width; //入力画像サイズ
 	UINT Height;//入力画像サイズ
 	UINT nnWidth;
@@ -50,8 +52,8 @@ private:
 	float Threshold;//閾値
 
 	PolygonData2D dnn, dpo[3], dcn[3];
-	PolygonData2D *din;
-	UINT ***pixIn = nullptr;
+	PolygonData2D* din;
+	UINT*** pixIn = nullptr;
 	int TexNo = -1;
 	UINT SearchMaxNum;
 	bool searchon;
@@ -64,7 +66,7 @@ private:
 	UINT negaNum = 0;
 	UINT poscnt = 0;
 	UINT negacnt = 0;
-	float *target = nullptr;
+	float* target = nullptr;
 	float currentTarget = 0.0f;
 	int errer = 0;
 	int currout = 0;
@@ -75,10 +77,10 @@ private:
 	int testCountn = 0;
 	int testOutnArr[BADGENUM] = { 0 };
 
-	BYTE *posImageTrain = nullptr;
-	BYTE *negaImageTrain = nullptr;
-	BYTE *posImageTest = nullptr;
-	BYTE *negaImageTest = nullptr;
+	BYTE* posImageTrain = nullptr;
+	BYTE* negaImageTrain = nullptr;
+	BYTE* posImageTest = nullptr;
+	BYTE* negaImageTest = nullptr;
 	UINT posTraNum, posTestNum, negaTraNum, negaTestNum;
 
 	void RunConvolutionToPooling(UINT ind);
@@ -101,20 +103,21 @@ private:
 	void queryDetec();
 	void queryTest();
 	void searchPixel();
-	void LearningImagebyteContrastAdjustment(BYTE *arr, UINT imageNum);
-	void searchPixelContrastAdjustment(float *arr, float max, float min);
+	void LearningImagebyteContrastAdjustment(BYTE* arr, UINT imageNum);
+	void searchPixelContrastAdjustment(float* arr, float max, float min);
 
 public:
-	ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT *numNode, int depth, UINT filNum, UCHAR type, bool searchOn, float Threshold);
+	ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT height, UINT* numNode, int depth, UINT filNum, UCHAR type, bool searchOn, float Threshold);
 	~ImageRecognition();
-	void SetTarget(float *tar);
+	void SetTarget(float* tar);
 	void SetLearningNum(UINT texNum, UINT ppmNum);
-	void CreateLearningImagebyte(float RateOftrainImage, BYTE *ppm);
+	void CreateLearningImagebyte(float RateOftrainImage, BYTE* ppm);
 	void LearningByteImage();
 	void TestByteImage();//Training()後に実行すること
 	void InputTexture(int Tno);
-	void InputPixel(BYTE *pix);
+	void InputPixel(BYTE* pix);
 	void Query();
+	void QueryGradCAM();
 	void LearningDecay(float in, float scale);
 	void Training();
 	void Test();
