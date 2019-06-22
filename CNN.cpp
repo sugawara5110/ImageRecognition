@@ -44,6 +44,19 @@ void Affine::Draw(float x, float y) {
 	dnn.Draw();
 }
 
+void Affine::ErrConnection() {
+	if (errPo) {
+		errPo->SetInErrorResource(GetOutErrorResource());
+		errPo->Training();
+		errPo->ErrConnection();
+	}
+	if (errCn) {
+		errCn->SetInErrorResource(GetOutErrorResource());
+		errCn->Training();
+		errCn->ErrConnection();
+	}
+}
+
 Pooling::Pooling(UINT width, UINT height, UINT poolNum, UINT inputsetnum) :
 	DxPooling(width, height, poolNum, inputsetnum) {
 
@@ -63,6 +76,47 @@ void Pooling::Draw(float x, float y) {
 	dpo.Update(x, y, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 20.0f, 20.0f * NumFilter);
 	dpo.CopyResource(GetNNTextureResource(), GetNNTextureResourceStates());
 	dpo.Draw();
+}
+
+void Pooling::InConnection() {
+	Query();
+	if (inCn) {
+		inCn->SetInputResource(GetOutputResource());
+		inCn->InConnection();
+	}
+	if (inAf) {
+		inAf->SetInputResource(GetOutputResource());
+	}
+}
+
+void Pooling::ErrConnection() {
+	if (errCn) {
+		errCn->SetInErrorResource(GetOutErrorResource());
+		errCn->Training();
+		errCn->ErrConnection();
+	}
+}
+
+void Pooling::TestConnection() {
+	Test();
+	if (inCn) {
+		inCn->SetInputResource(GetOutputResource());
+		inCn->TestConnection();
+	}
+	if (inAf) {
+		inAf->SetInputResource(GetOutputResource());
+	}
+}
+
+void Pooling::DetectionConnection(UINT SearchNum) {
+	Detection(SearchNum);
+	if (inCn) {
+		inCn->SetInputResource(GetOutputResource());
+		inCn->DetectionConnection(SearchNum);
+	}
+	if (inAf) {
+		inAf->SetInputResource(GetOutputResource());
+	}
 }
 
 Convolution::Convolution(UINT width, UINT height, UINT filNum, UINT inputsetnum, UINT elnumwid, UINT filstep) :
@@ -85,46 +139,151 @@ void Convolution::Draw(float x, float y) {
 	dcn.Draw();
 }
 
-CNN::CNN(UINT srcW, UINT srcH, UINT width, UINT height, UINT* numNode, int depth, UINT NumFilter, UINT SearchMaxNum) {
-	NumConv = 3;
-	NumPool = 3;
-	if (depth > MAX_DEPTH_NUM)NumDepth = MAX_DEPTH_NUM;
-	else
-		NumDepth = depth;
+void Convolution::InConnection() {
+	Query();
+	if (inCn) {
+		inCn->SetInputResource(GetOutputResource());
+		inCn->InConnection();
+	}
+	if (inPo) {
+		inPo->SetInputResource(GetOutputResource());
+		inPo->InConnection();
+	}
+	if (inAf) {
+		inAf->SetInputResource(GetOutputResource());
+	}
+}
+
+void Convolution::ErrConnection() {
+	if (errCn) {
+		errCn->SetInErrorResource(GetOutErrorResource());
+		errCn->Training();
+		errCn->ErrConnection();
+	}
+	if (errPo) {
+		errPo->SetInErrorResource(GetOutErrorResource());
+		errPo->Training();
+		errPo->ErrConnection();
+	}
+}
+
+void Convolution::TestConnection() {
+	Test();
+	if (inCn) {
+		inCn->SetInputResource(GetOutputResource());
+		inCn->TestConnection();
+	}
+	if (inPo) {
+		inPo->SetInputResource(GetOutputResource());
+		inPo->TestConnection();
+	}
+	if (inAf) {
+		inAf->SetInputResource(GetOutputResource());
+	}
+}
+
+void Convolution::DetectionConnection(UINT SearchNum) {
+	Detection(SearchNum);
+	if (inCn) {
+		inCn->SetInputResource(GetOutputResource());
+		inCn->DetectionConnection(SearchNum);
+	}
+	if (inPo) {
+		inPo->SetInputResource(GetOutputResource());
+		inPo->DetectionConnection(SearchNum);
+	}
+	if (inAf) {
+		inAf->SetInputResource(GetOutputResource());
+	}
+}
+
+CNN::CNN(UINT srcW, UINT srcH, Layer* layer, UINT layersize) {
+	NumConv = 0;
+	NumPool = 0;
+	layerSize = layersize;
+	//レイヤーカウント
+	for (UINT i = 0; i < layerSize; i++) {
+		switch (layer[i].layerName) {
+		case CONV:
+			NumConv++;
+			break;
+		case POOL:
+			NumPool++;
+			break;
+		}
+	}
 
 	cn = new Convolution * [NumConv];
 	po = new Pooling * [NumPool];
-	cn[0] = new Convolution(width, height, NumFilter, SearchMaxNum, 7, 1);
-	UINT wid = cn[0]->GetOutWidth();
-	UINT hei = cn[0]->GetOutHeight();
+	UINT NumDepth = 0;
 
-	po[0] = new Pooling(wid, hei, NumFilter, SearchMaxNum);
-	wid = po[0]->GetOutWidth();
-	hei = po[0]->GetOutHeight();
+	if (layer[NumConv + NumPool].NumDepthNotInput > MAX_DEPTH_NUM - 1)NumDepth = MAX_DEPTH_NUM;
+	else
+		NumDepth = layer[NumConv + NumPool].NumDepthNotInput + 1;
 
-	cn[1] = new Convolution(wid, hei, NumFilter, SearchMaxNum, 5, 1);
-	wid = cn[1]->GetOutWidth();
-	hei = cn[1]->GetOutHeight();
-
-	po[1] = new Pooling(wid, hei, NumFilter, SearchMaxNum);
-	wid = po[1]->GetOutWidth();
-	hei = po[1]->GetOutHeight();
-
-	cn[2] = new Convolution(wid, hei, NumFilter, SearchMaxNum, 3, 1);
-	wid = cn[2]->GetOutWidth();
-	hei = cn[2]->GetOutHeight();
-
-	gc = new GradCAM(srcW, srcH, wid, hei, 3 * 3, NumFilter, SearchMaxNum);
-
-	po[2] = new Pooling(wid, hei, NumFilter, SearchMaxNum);
-	wid = po[2]->GetOutWidth();
-	hei = po[2]->GetOutHeight();
-
+	//レイヤー生成
+	UINT convCnt = 0;
+	UINT poolCnt = 0;
+	UINT wid = layer[0].mapWid;
+	UINT hei = layer[0].mapHei;
 	UINT numN[MAX_DEPTH_NUM];
-	numN[0] = wid * hei;
-	for (UINT i = 1; i < NumDepth; i++)numN[i] = numNode[i - 1];
+	for (UINT i = 0; i < layerSize; i++) {
+		switch (layer[i].layerName) {
+		case CONV:
+			cn[convCnt] = new Convolution(wid, hei, layer[i].NumFilter, layer[i].maxThread,
+				layer[i].NumConvFilterWid, layer[i].NumConvFilterSlide);
+			wid = cn[convCnt]->GetOutWidth();
+			hei = cn[convCnt++]->GetOutHeight();
+			if (convCnt == NumConv) {
+				gc = new GradCAM(srcW, srcH, wid, hei, layer[i].NumConvFilterWid * layer[i].NumConvFilterWid,
+					layer[i].NumFilter, layer[i].maxThread);
+			}
+			break;
+		case POOL:
+			po[poolCnt] = new Pooling(wid, hei, layer[i].NumFilter, layer[i].maxThread);
+			wid = po[poolCnt]->GetOutWidth();
+			hei = po[poolCnt++]->GetOutHeight();
+			break;
+		case AFFINE:
+			numN[0] = wid * hei;
+			for (UINT i1 = 1; i1 < NumDepth; i1++)numN[i1] = layer[i].numNode[i1 - 1];
+			nn = new Affine(wid, hei, numN, NumDepth, layer[i].NumFilter, layer[i].maxThread);
+			break;
+		}
+	}
 
-	nn = new Affine(wid, hei, numN, NumDepth, NumFilter, SearchMaxNum);
+	//レイヤー接続
+	convCnt = 0;
+	poolCnt = 0;
+	for (UINT i = 0; i < layerSize; i++) {
+		switch (layer[i].layerName) {
+		case CONV:
+			//誤差側接続
+			if (i > 0) {
+				if (layer[i - 1].layerName == CONV)cn[convCnt]->errCn = cn[convCnt - 1];
+				if (layer[i - 1].layerName == POOL)cn[convCnt]->errPo = po[poolCnt - 1];
+			}
+			//入力側接続
+			if (layer[i + 1].layerName == CONV)cn[convCnt]->inCn = cn[convCnt + 1];
+			if (layer[i + 1].layerName == POOL)cn[convCnt]->inPo = po[poolCnt];
+			if (layer[i + 1].layerName == AFFINE)cn[convCnt]->inAf = nn;
+			convCnt++;
+			break;
+		case POOL:
+			//誤差側接続
+			if (layer[i - 1].layerName == CONV)po[poolCnt]->errCn = cn[convCnt - 1];
+			//入力側接続
+			if (layer[i + 1].layerName == CONV)po[poolCnt]->inCn = cn[convCnt];
+			if (layer[i + 1].layerName == AFFINE)po[poolCnt]->inAf = nn;
+			poolCnt++;
+			break;
+		case AFFINE:
+			//誤差側接続
+			if (layer[i - 1].layerName == CONV)nn->errCn = cn[convCnt - 1];
+			if (layer[i - 1].layerName == POOL)nn->errPo = po[poolCnt - 1];
+			break;
+		}
+	}
 }
 
 CNN::~CNN() {
@@ -136,107 +295,28 @@ CNN::~CNN() {
 	S_DELETE(gc);
 }
 
-void CNN::RunConvolutionToPooling(UINT ind) {
-	cn[ind]->Query();
-	po[ind]->SetInputResource(cn[ind]->GetOutputResource());
-}
-
-void CNN::RunPoolingToConvolution(UINT ind) {
-	po[ind]->Query();
-	cn[ind + 1]->SetInputResource(po[ind]->GetOutputResource());
-}
-
-void CNN::RunPoolingToNN(UINT ind) {
-	po[ind]->Query();
-	nn->SetInputResource(po[ind]->GetOutputResource());
-}
-
-void CNN::RunConvolutionToPoolingDetec(UINT ind, UINT SearchNum) {
-	cn[ind]->Detection(SearchNum);
-	po[ind]->SetInputResource(cn[ind]->GetOutputResource());
-}
-
-void CNN::RunPoolingToConvolutionDetec(UINT ind, UINT SearchNum) {
-	po[ind]->Detection(SearchNum);
-	cn[ind + 1]->SetInputResource(po[ind]->GetOutputResource());
-}
-
-void CNN::RunPoolingToNNDetec(UINT ind, UINT SearchNum) {
-	po[ind]->Detection(SearchNum);
-	nn->SetInputResource(po[ind]->GetOutputResource());
-}
-
-void CNN::RunConvolutionToPoolingTest(UINT ind) {
-	cn[ind]->Test();
-	po[ind]->SetInputResource(cn[ind]->GetOutputResource());
-}
-
-void CNN::RunPoolingToConvolutionTest(UINT ind) {
-	po[ind]->Test();
-	cn[ind + 1]->SetInputResource(po[ind]->GetOutputResource());
-}
-
-void CNN::RunPoolingToNNTest(UINT ind) {
-	po[ind]->Test();
-	nn->SetInputResource(po[ind]->GetOutputResource());
-}
-
-void CNN::NNToPoolingBackPropagation(UINT ind) {
-	po[ind]->SetInErrorResource(nn->GetOutErrorResource());
-	po[ind]->Training();
-}
-
-void CNN::ConvolutionToPoolingBackPropagation(UINT ind) {
-	po[ind]->SetInErrorResource(cn[ind + 1]->GetOutErrorResource());
-	po[ind]->Training();
-}
-
-void CNN::PoolingToConvolutionBackPropagation(UINT ind) {
-	cn[ind]->SetInErrorResource(po[ind]->GetOutErrorResource());
-	cn[ind]->Training();
-}
-
-void CNN::query() {
-	RunConvolutionToPooling(0);
-	RunPoolingToConvolution(0);
-	RunConvolutionToPooling(1);
-	RunPoolingToConvolution(1);
-	RunConvolutionToPooling(2);
-	RunPoolingToNN(2);
-}
-
-void CNN::queryDetec(UINT SearchNum) {
-	RunConvolutionToPoolingDetec(0, SearchNum);
-	RunPoolingToConvolutionDetec(0, SearchNum);
-	RunConvolutionToPoolingDetec(1, SearchNum);
-	RunPoolingToConvolutionDetec(1, SearchNum);
-	RunConvolutionToPoolingDetec(2, SearchNum);
-	RunPoolingToNNDetec(2, SearchNum);
-}
-
-void CNN::queryTest() {
-	RunConvolutionToPoolingTest(0);
-	RunPoolingToConvolutionTest(0);
-	RunConvolutionToPoolingTest(1);
-	RunPoolingToConvolutionTest(1);
-	RunConvolutionToPoolingTest(2);
-	RunPoolingToNNTest(2);
-}
-
 void CNN::Detection(UINT SearchNum) {
-	queryDetec(SearchNum);
+	cn[0]->DetectionConnection(SearchNum);
 	nn->Query(SearchNum);
 }
 
 void CNN::DetectionGradCAM(UINT SearchNum, UINT srcMapWid, UINT mapslide) {
-	queryDetec(SearchNum);
-	gc->SetFeatureMap(cn[2]->GetOutputResource());//最終Convの出力を記録()
+	cn[0]->DetectionConnection(SearchNum);
+	gc->SetFeatureMap(cn[NumConv - 1]->GetOutputResource());//最終Convの出力を記録()
 	nn->SetTargetEl(0.99f, 0);
 	nn->QueryAndBackPropagation(SearchNum);//フィルター更新無しの逆伝播
-	NNToPoolingBackPropagation(2);
-	cn[2]->SetInErrorResource(po[2]->GetOutErrorResource());
-	cn[2]->BackPropagationNoWeightUpdate();//フィルター更新無しの逆伝播
-	gc->SetGradient(cn[2]->GetGradient());//
+	if (nn->errPo) {
+		nn->errPo->SetInErrorResource(nn->GetOutErrorResource());
+		nn->errPo->Training();
+		nn->errPo->errCn->SetInErrorResource(nn->errPo->GetOutErrorResource());
+		nn->errPo->errCn->BackPropagationNoWeightUpdate();//フィルター更新無しの逆伝播
+	}
+	if (nn->errCn) {
+		nn->errCn->SetInErrorResource(nn->GetOutErrorResource());
+		nn->errCn->BackPropagationNoWeightUpdate();
+	}
+
+	gc->SetGradient(cn[NumConv - 1]->GetGradient());
 	gc->ComGAP();
 	gc->ComGradCAM(SearchNum);
 	gc->GradCAMSynthesis(srcMapWid, srcMapWid, mapslide);
@@ -249,7 +329,7 @@ void CNN::SetLearningLate(float nN, float cN) {
 
 void CNN::Training() {
 	for (UINT i = 0; i < NumConv; i++)cn[i]->SetdropThreshold(0.0f);
-	query();
+	cn[0]->InConnection();
 	float drop[MAX_DEPTH_NUM];
 	drop[0] = 0.0f;
 	drop[1] = 0.1f;
@@ -258,18 +338,12 @@ void CNN::Training() {
 	drop[4] = 0.0f;
 	nn->SetdropThreshold(drop);
 	nn->Training();
-
-	NNToPoolingBackPropagation(2);
-	PoolingToConvolutionBackPropagation(2);
-	ConvolutionToPoolingBackPropagation(1);
-	PoolingToConvolutionBackPropagation(1);
-	ConvolutionToPoolingBackPropagation(0);
-	PoolingToConvolutionBackPropagation(0);
+	nn->ErrConnection();
 }
 
 void CNN::Test() {
 	for (UINT i = 0; i < NumConv; i++)cn[i]->SetdropThreshold(0.0f);
-	queryTest();
+	cn[0]->InConnection();
 	float drop[MAX_DEPTH_NUM];
 	drop[0] = 0.0f;
 	drop[1] = 0.0f;

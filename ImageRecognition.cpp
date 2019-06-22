@@ -64,7 +64,49 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 
 	SearchMaxNum = sp[0]->SearchMaxNum;
 
-	cnn = new CNN(srcWid, srcHei, width, height, numNode, Depth, filNum, SearchMaxNum);
+	Layer layer[7];
+	UINT layerCnt = 0;
+
+	layer[layerCnt].layerName = CONV;
+	layer[layerCnt].mapWid = width;
+	layer[layerCnt].mapHei = height;
+	layer[layerCnt].NumFilter = filnum;
+	layer[layerCnt].maxThread = SearchMaxNum;
+	layer[layerCnt].NumConvFilterWid = 7;
+	layer[layerCnt++].NumConvFilterSlide = 1;
+
+	layer[layerCnt].layerName = POOL;
+	layer[layerCnt].NumFilter = filnum;
+	layer[layerCnt++].maxThread = SearchMaxNum;
+
+	layer[layerCnt].layerName = CONV;
+	layer[layerCnt].NumFilter = filnum;
+	layer[layerCnt].maxThread = SearchMaxNum;
+	layer[layerCnt].NumConvFilterWid = 5;
+	layer[layerCnt++].NumConvFilterSlide = 1;
+
+	layer[layerCnt].layerName = POOL;
+	layer[layerCnt].NumFilter = filnum;
+	layer[layerCnt++].maxThread = SearchMaxNum;
+
+	layer[layerCnt].layerName = CONV;
+	layer[layerCnt].NumFilter = filnum;
+	layer[layerCnt].maxThread = SearchMaxNum;
+	layer[layerCnt].NumConvFilterWid = 3;
+	layer[layerCnt++].NumConvFilterSlide = 1;
+
+	layer[layerCnt].layerName = POOL;
+	layer[layerCnt].NumFilter = filnum;
+	layer[layerCnt++].maxThread = SearchMaxNum;
+
+	layer[layerCnt].layerName = AFFINE;
+	layer[layerCnt].NumFilter = filnum;
+	layer[layerCnt].maxThread = SearchMaxNum;
+	layer[layerCnt].numNode[0] = 64;
+	layer[layerCnt].numNode[1] = 1;
+	layer[layerCnt++].NumDepthNotInput = 2;
+
+	cnn = new CNN(srcWid, srcHei, layer, layerCnt);
 
 	UINT p2dNum = SearchMaxNum;
 	if (!searchon)p2dNum = 1;
@@ -525,15 +567,6 @@ void ImageRecognition::SPDraw() {
 void ImageRecognition::textDraw(UINT stateNum, float x, float y) {
 
 	if (stateNum == 0)return;
-
-	DxText::GetInstance()->UpDateText(L"“ü—Í‰æ‘œ ", 10.0f, 480.0f, 15.0f, { 1.0f, 0.0f, 0.0f, 1.0f });
-	DxText::GetInstance()->UpDateText(L"ô‚İ‘w", 0.0f, 7.0f, 15.0f, { 1.0f, 0.5f, 0.5f, 1.0f });
-	DxText::GetInstance()->UpDateText(L"ƒv[ƒŠƒ“ƒO‘w", 100.0f, 7.0f, 15.0f, { 0.5f, 1.0f, 0.5f, 1.0f });
-	DxText::GetInstance()->UpDateText(L"‘SŒ‹‡‘w‹t•ûŒüo—Í ", 680.0f, 7.0f, 15.0f, { 0.5f, 0.5f, 1.0f, 1.0f });
-	DxText::GetInstance()->UpDateText(L"ô‚İ‘w", 240.0f, 7.0f, 15.0f, { 1.0f, 0.5f, 0.5f, 1.0f });
-	DxText::GetInstance()->UpDateText(L"ƒv[ƒŠƒ“ƒO‘w", 340.0f, 7.0f, 15.0f, { 0.5f, 1.0f, 0.5f, 1.0f });
-	DxText::GetInstance()->UpDateText(L"ô‚İ‘w", 480.0f, 7.0f, 15.0f, { 1.0f, 0.5f, 0.5f, 1.0f });
-	DxText::GetInstance()->UpDateText(L"ƒv[ƒŠƒ“ƒO‘w", 580.0f, 7.0f, 15.0f, { 0.5f, 1.0f, 0.5f, 1.0f });
 
 	switch (stateNum) {
 	case 1:
