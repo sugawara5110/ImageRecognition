@@ -135,7 +135,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				input = new UINT[2];
 				input[0] = 64;
 				input[1] = 1;
-				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 20, 'S', searchOn, threshold);
+				nn = new ImageRecognition(512, 256, 64, 64, input, 2, 20, searchOn, threshold);
 				nn->SetTarget(target);
 				if (state == 1) {
 					if (!nn->LoadDataSet()) {
@@ -224,8 +224,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		if (state != 0 && drawOn) {
 			if (state == 1) {
 				nn->NNDraw();
-				nn->PODraw();
-				nn->CNDraw();
 			}
 			nn->SPDraw();
 			nn->INDraw(0.0f, 0.0f, 0.0f, 0.0f);
