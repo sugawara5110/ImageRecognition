@@ -67,41 +67,40 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	Layer layer[7];
 	UINT layerCnt = 0;
 
+	layer[0].mapWid = width;
+	layer[0].mapHei = height;
+	layer[0].maxThread = SearchMaxNum;
 	layer[layerCnt].layerName = CONV;
-	layer[layerCnt].mapWid = width;
-	layer[layerCnt].mapHei = height;
+	layer[layerCnt].acName = ReLU;
 	layer[layerCnt].NumFilter = filnum;
-	layer[layerCnt].maxThread = SearchMaxNum;
 	layer[layerCnt].NumConvFilterWid = 7;
 	layer[layerCnt++].NumConvFilterSlide = 1;
 
 	layer[layerCnt].layerName = POOL;
-	layer[layerCnt].NumFilter = filnum;
-	layer[layerCnt++].maxThread = SearchMaxNum;
+	layer[layerCnt++].NumFilter = filnum;
 
 	layer[layerCnt].layerName = CONV;
-	layer[layerCnt].NumFilter = filnum;
-	layer[layerCnt].maxThread = SearchMaxNum;
+	layer[layerCnt].acName = ReLU;
+	layer[layerCnt].NumFilter = filnum * 2;
 	layer[layerCnt].NumConvFilterWid = 5;
 	layer[layerCnt++].NumConvFilterSlide = 1;
 
 	layer[layerCnt].layerName = POOL;
-	layer[layerCnt].NumFilter = filnum;
-	layer[layerCnt++].maxThread = SearchMaxNum;
+	layer[layerCnt++].NumFilter = filnum * 2;
 
 	layer[layerCnt].layerName = CONV;
-	layer[layerCnt].NumFilter = filnum;
-	layer[layerCnt].maxThread = SearchMaxNum;
+	layer[layerCnt].acName = ReLU;
+	layer[layerCnt].NumFilter = filnum * 4;
 	layer[layerCnt].NumConvFilterWid = 3;
 	layer[layerCnt++].NumConvFilterSlide = 1;
 
 	layer[layerCnt].layerName = POOL;
-	layer[layerCnt].NumFilter = filnum;
-	layer[layerCnt++].maxThread = SearchMaxNum;
+	layer[layerCnt++].NumFilter = filnum * 4;
 
 	layer[layerCnt].layerName = AFFINE;
-	layer[layerCnt].NumFilter = filnum;
-	layer[layerCnt].maxThread = SearchMaxNum;
+	layer[layerCnt].acName = ReLU;
+	layer[layerCnt].topAcName = CrossEntropySigmoid;
+	layer[layerCnt].NumFilter = filnum * 4;
 	layer[layerCnt].numNode[0] = 64;
 	layer[layerCnt].numNode[1] = 1;
 	layer[layerCnt++].NumDepthNotInput = 2;
@@ -567,9 +566,12 @@ void ImageRecognition::SPDraw() {
 void ImageRecognition::textDraw(UINT stateNum, float x, float y) {
 
 	if (stateNum == 0)return;
-
 	switch (stateNum) {
 	case 1:
+		DxText::GetInstance()->UpDateText(L"testŒë· ", 600.0f, 370.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateValue((int)(cnn->GetcrossEntropyErrorTest() * 100.0f), 710.0f, 370.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateText(L"Œë· ", 600.0f, 385.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateValue((int)(cnn->GetcrossEntropyError() * 100.0f), 710.0f, 385.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
 		DxText::GetInstance()->UpDateText(L"ŠwK’†o—Í ", 600.0f, 400.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 		DxText::GetInstance()->UpDateValue(currout, 710.0f, 400.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
 		DxText::GetInstance()->UpDateText(L"Target ", 600.0f, 415.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
@@ -620,6 +622,14 @@ float ImageRecognition::Getcurrtar() {
 
 int ImageRecognition::Geterrer() {
 	return errer;
+}
+
+float ImageRecognition::GetcrossEntropyError() {
+	return cnn->GetcrossEntropyError();
+}
+
+float ImageRecognition::GetcrossEntropyErrorTest() {
+	return cnn->GetcrossEntropyErrorTest();
 }
 
 void ImageRecognition::SaveData() {

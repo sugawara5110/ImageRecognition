@@ -9,8 +9,8 @@
 #include "ImageRecognition.h"
 #include "TextureLoader.h"
 #include "../../../Common/DirectShowWrapper\Camera.h"
-#include "Graph.h"
-#include "PPMLoader.h"
+#include "../../../CNN/Graph.h"
+#include "../../../CNN/PPMLoader.h"
 #pragma comment(lib,"winmm.lib")
 #define COUNT 80000
 
@@ -39,7 +39,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Dx12Process::InstanceCreate();
 	//Dx11Processオブジェクト取得
 	dx = Dx12Process::GetInstance();
-	dx->Initialize(hWnd, 900, 600);
+	dx->Initialize(hWnd, 900, 800);
 	Camera* cam = nullptr;
 	//test
 	//Movie mov("aaa.avi");
@@ -139,7 +139,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				nn->SetTarget(target);
 				if (state == 1) {
 					if (!nn->LoadDataSet()) {
-						ppm = new PPMLoader(L"../../gazou/faceData/*", 64, 64);
+						ppm = new PPMLoader(L"../../gazou/faceData/*", 64, 64, GRAYSCALE);
 						nn->SetLearningNum(learningImageNum, ppm->GetFileNum());
 						nn->CreateLearningImagebyte(0.7f, ppm->GetImageArr());
 					}
@@ -230,7 +230,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			nn->textDraw(state, 0.0f, 0.0f);
 			if (state == 1) {
 				float tmw = (float)cnt / (float)COUNT * 255.0f;
-				float tmh = (float)nn->Getcurrout() / 100.0f * 255.0f;
+				/*float tmh = (float)nn->Getcurrout() / 100.0f * 255.0f;
 				float tmhtes1 = (float)nn->Gettestout1() / 100.0f * 255.0f;
 				float tmhtes = (float)nn->Gettestout() / 100.0f * 255.0f;
 				if (nn->Getcurrtar() >= 0.5f) {
@@ -242,7 +242,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					graph[0]->SetData((int)tmw, (int)tmh, 0xff0000ff);
 					graph[1]->SetData((int)tmw, (int)tmhtes1, 0xff00ff00);
 					graph[1]->SetData((int)tmw, (int)tmhtes, 0xff0000ff);
-				}
+				}*/
+
+				float cerr = nn->GetcrossEntropyError() * 100.0f;
+				float cerrTest = nn->GetcrossEntropyErrorTest() * 100.0f;
+				if (cerr > 255.0f)cerr = 255.0f;
+				if (cerrTest > 255.0f)cerrTest = 255.0f;
+				graph[0]->SetData((int)tmw, (int)cerr, 0xffffffff);
+				graph[1]->SetData((int)tmw, (int)cerrTest, 0xff0000ff);
 				graph[0]->Draw();
 				graph[1]->Draw();
 			}

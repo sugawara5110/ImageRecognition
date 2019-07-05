@@ -9,7 +9,7 @@
 
 #include "../../../Common/Direct3DWrapper/Dx_NN.h"
 #include "../../../Common/Direct3DWrapper/DxText.h"
-#include "CNN.h"
+#include "../../../CNN/CNN.h"
 #define BADGENUM 32
 
 class SP {
@@ -105,6 +105,8 @@ public:
 	int Gettestout();
 	int Gettestout1();
 	float Getcurrtar();
+	float GetcrossEntropyError();
+	float GetcrossEntropyErrorTest();
 	void textDraw(UINT stateNum, float x, float y);
 	void SaveData();
 	void LoadData();
