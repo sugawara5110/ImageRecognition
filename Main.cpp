@@ -5,12 +5,12 @@
 //*****************************************************************************************//
 
 #include "../../../Common/Window/Win.h"
-#include "../../../Common/Direct3DWrapper/DxText.h"
+#include "../../../Common/Direct3DWrapperOption/DxText.h"
 #include "ImageRecognition.h"
-#include "TextureLoader.h"
+#include "TextureBinaryLoader.h"
 #include "../../../Common/DirectShowWrapper\Camera.h"
 #include "../../../CNN/Graph.h"
-#include "../../../CNN/PPMLoader.h"
+#include "../../../PPMLoader/PPMLoader.h"
 #pragma comment(lib,"winmm.lib")
 #define COUNT 80000
 
@@ -40,24 +40,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//Dx11Processオブジェクト取得
 	dx = Dx12Process::GetInstance();
 	dx->Initialize(hWnd, 900, 800);
+	//dx->reportLiveDeviceObjectsOn();
 	Camera* cam = nullptr;
 	//test
 	//Movie mov("aaa.avi");
 	bool camOn = false;
 	DxText::InstanceCreate();
 	text = DxText::GetInstance();
-	TextureLoader::TextureLoad();
+	TextureBinaryLoader::TextureLoad();
 	Control* control;
 	PPMLoader* ppm = nullptr;
 	control = Control::GetInstance();
-	int learningImageNum = TextureLoader::GetLearningImageNum();
-	float* target = TextureLoader::GetLearningTarget();
-
+	DxInput* di = DxInput::GetInstance();
+	di->create(hWnd);
+	di->SetWindowMode(true);
+	int learningImageNum = TextureBinaryLoader::GetLearningImageNum();
+	float* target = TextureBinaryLoader::GetLearningTarget();
+	/*
 	dx->Bigin(0);
 	Dx12Process::GetInstance()->GetTexture(0);
 	dx->End(0);
 	dx->WaitFenceCurrent();
-
+	*/
 	UINT* input = nullptr;
 	ImageRecognition* nn = nullptr;;
 	int cnt = 0;
@@ -71,7 +75,51 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	float threshold = 0.0f;
 	UINT testNum = 0;
 	UINT testCnt = 0;
+	float camTheta = 0;
 	while (1) {//アプリ実行中ループ
+
+		//実験
+		/*dx->Bigin(0);
+		DxConvolution *cn = nullptr;
+		cn = new DxConvolution(2, 2, 1, true, 1, 3, 2);
+		cn->SetdropThreshold(0.0f);
+		cn->ComCreate(ReLU);
+		dx->End(0);
+		dx->WaitFenceCurrent();
+		float in[] = {
+			1,1,
+			1,1, };
+		cn->Input(in, 0, 0);
+
+		cn->Query();
+		float f1[9];
+		for (int i = 0; i < 9; i++) {
+			f1[i] = cn->OutputFilter(0, i);
+			float f = f1[i];
+		}
+
+		float o1[16];
+		for (int i = 0; i < 16; i++) {
+			o1[i] = cn->OutputEl(0, i);
+			float o = o1[i];
+		}
+
+		float inerr[] = {
+			1,1,1,1,
+			1,1,1,1,
+			1,1,1,1,
+			1,1,1,1 };
+		cn->InputError(inerr, 0, 0);
+		cn->Training();
+		float o1er[4];
+		for (int i = 0; i < 4; i++) {
+			o1er[i] = cn->GetErrorEl(0, i);
+			float oer = o1er[i];
+		}
+
+		S_DELETE(cn);*/
+		//実験
+
 		if (!DispatchMSG(&msg))break;
 		Directionkey key = control->Direction();
 		T_float::GetTime(hWnd);
@@ -142,6 +190,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 						ppm = new PPMLoader(L"../../gazou/faceData/*", 64, 64, GRAYSCALE);
 						nn->SetLearningNum(learningImageNum, ppm->GetFileNum());
 						nn->CreateLearningImagebyte(0.7f, ppm->GetImageArr());
+						//nn->SetLearningNum(learningImageNum, 0);
+						//nn->CreateLearningImagebyte(0.7f, nullptr);
 					}
 					graph[0] = new Graph();
 					graph[0]->CreateGraph(100, 218, 256, 128, 256, 256);
@@ -149,7 +199,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					graph[1]->CreateGraph(357, 218, 256, 128, 256, 256);
 				}
 				dx->End(0);
-				dx->WaitFenceCurrent();
+				dx->RunGpu();
+				dx->WaitFence();
 				if (state == 2)nn->LoadData();
 			}
 			DxText::GetInstance()->UpDateText(L"学習モード ", 100.0f, 100.0f, 15.0f, { 0.3f, 0.3f, br0, 1.0f });
@@ -198,7 +249,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				testCnt = 0;
 				testNum++;
 			}
-			if (testNum >= TextureLoader::GetTestImageNum())testNum = 0;
+			if (testNum >= TextureBinaryLoader::GetTestImageNum())testNum = 0;
 			nn->QueryGradCAM();
 			if (cancel) {
 				cancel = false;
@@ -218,15 +269,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			drawOn = true;
 			break;
 		}
+		using namespace CoordTf;
+		MATRIX camThetaZ;
+		VECTOR3 cam1 = { 0, -170, 0 };
+		MatrixRotationZ(&camThetaZ, camTheta * 360.0f);
+		VectorMatrixMultiply(&cam1, &camThetaZ);
+		dx->Cameraset(cam1, { 0, 0, 0 });
+		if ((camTheta += 0.01f) > 360.0f)camTheta = 0.0f;
 
 		dx->Bigin(0);
-		dx->Sclear(0);
+		dx->BiginDraw(0, true);
 		if (state != 0 && drawOn) {
 			if (state == 1) {
 				nn->NNDraw();
 			}
 			nn->SPDraw();
-			nn->INDraw(0.0f, 0.0f, 0.0f, 0.0f);
+			nn->INDraw(0, 0.0f, 0.0f, 0.0f, 0.0f);
 			nn->textDraw(state, 0.0f, 0.0f);
 			if (state == 1) {
 				float tmw = (float)cnt / (float)COUNT * 255.0f;
@@ -250,8 +308,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				if (cerrTest > 255.0f)cerrTest = 255.0f;
 				graph[0]->SetData((int)tmw, (int)cerr, 0xffffffff);
 				graph[1]->SetData((int)tmw, (int)cerrTest, 0xff0000ff);
-				graph[0]->Draw();
-				graph[1]->Draw();
+				graph[0]->Draw(0);
+				graph[1]->Draw(0);
 			}
 		}
 		if (state == 1) {
@@ -260,8 +318,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 		text->UpDate();
 		text->Draw(0);
+		dx->EndDraw(0);
 		dx->End(0);
-		dx->WaitFenceCurrent();
+		dx->RunGpu();
+		dx->WaitFence();
 		dx->DrawScreen();
 	}
 	ARR_DELETE(input);
@@ -270,7 +330,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	S_DELETE(graph[0]);
 	S_DELETE(graph[1]);
 	S_DELETE(ppm);
-	TextureLoader::DeleteTextureStruct();
+	TextureBinaryLoader::DeleteTextureStruct();
+	DxInput::DeleteInstance();
+	Control::DeleteInstance();
 	DxText::DeleteInstance();
 	Dx12Process::DeleteInstance();
 	return (int)msg.wParam;

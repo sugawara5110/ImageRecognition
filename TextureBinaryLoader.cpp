@@ -1,35 +1,30 @@
 //*****************************************************************************************//
 //**                                                                                     **//
-//**                   　　　    TextureLoaderクラス                                     **//
+//**                   　　　    TextureBinaryLoaderクラス                               **//
 //**                                                                                     **//
 //*****************************************************************************************//
 
-#include "TextureLoader.h"
+#include "TextureBinaryLoader.h"
 
-Texture *TextureLoader::tex = NULL;
-SearchFile *TextureLoader::sf = nullptr;
-int TextureLoader::texNum = 0;
-int TextureLoader::learningImageNum = 0;
-int TextureLoader::learningCorrectFaceFirstInd = 0;
-float *TextureLoader::target = nullptr;
+Texture* TextureBinaryLoader::tex = NULL;
+SearchFile* TextureBinaryLoader::sf = nullptr;
+int TextureBinaryLoader::texNum = 0;
+int TextureBinaryLoader::learningImageNum = 0;
+int TextureBinaryLoader::learningCorrectFaceFirstInd = 0;
+float* TextureBinaryLoader::target = nullptr;
 
-void TextureLoader::TextureDecode(char *Bpass) {
-	TextureDecode(Bpass, FALSE);
-}
-
-void TextureLoader::TextureDecode(char *Bpass, bool UpKeep) {
+void TextureBinaryLoader::TextureDecode(char* Bpass) {
 	tex[texNum].texName = Bpass;
-	tex[texNum].UpKeep = UpKeep;
 }
 
-void TextureLoader::TextureLoad() {
+void TextureBinaryLoader::TextureLoad() {
 
 	tex = new Texture[150];
 	target = new float[150];
 	texNum = 0;
 
 	sf = new SearchFile(3);
-	char **str = new char*[2];
+	char** str = new char* [2];
 	str[0] = "jpg";
 	str[1] = "png";
 	sf->Search(L"LearningImage/Incorrect/*", 0, str, 2);
@@ -48,28 +43,27 @@ void TextureLoader::TextureLoad() {
 			texNum++;
 		}
 	}
-
-	Dx12Process::GetInstance()->SetTextureBinary(tex, texNum);
+	TextureLoader::GetTexture2(texNum, tex, Dx12Process::GetInstance());
 }
 
-void TextureLoader::DeleteTextureStruct() {
+void TextureBinaryLoader::DeleteTextureStruct() {
 	ARR_DELETE(tex);
 	ARR_DELETE(target);
 	S_DELETE(sf);
 }
 
-int TextureLoader::GetLearningImageNum() {
+int TextureBinaryLoader::GetLearningImageNum() {
 	return learningImageNum;
 }
 
-float *TextureLoader::GetLearningTarget() {
+float* TextureBinaryLoader::GetLearningTarget() {
 	return target;
 }
 
-int TextureLoader::GetTestImageNum() {
+int TextureBinaryLoader::GetTestImageNum() {
 	return texNum - learningImageNum;
 }
 
-int TextureLoader::GetlearningCorrectFaceFirstInd() {
+int TextureBinaryLoader::GetlearningCorrectFaceFirstInd() {
 	return learningCorrectFaceFirstInd;
 }

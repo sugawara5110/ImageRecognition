@@ -7,23 +7,23 @@
 #ifndef Class_ImageRecognition_Header
 #define Class_ImageRecognition_Header
 
-#include "../../../Common/Direct3DWrapper/Dx_NN.h"
-#include "../../../Common/Direct3DWrapper/DxText.h"
+#include "../../../Common/Direct3DWrapperNN/Dx_NN.h"
+#include "../../../Common/Direct3DWrapperOption/DxText.h"
 #include "../../../CNN/CNN.h"
 #define BADGENUM 32
 
 class SP {
 
 public:
-	SearchPixel * Sp = nullptr;
-	float *spPix = nullptr;
-	PolygonData2D dsp[2];
+	SearchPixel* Sp = nullptr;
+	float* spPix = nullptr;
+	PolygonData2D* dsp[2];
 	UINT SearchMaxNum;
 	UINT  SearchNum;
-	bool *Searchflg = nullptr;
-	int *SearchOutInd = nullptr;
+	bool* Searchflg = nullptr;
+	int* SearchOutInd = nullptr;
 	UINT Search10cnt = 0;
-	float *out = nullptr;
+	float* out = nullptr;
 
 	SP(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, float outscale, UINT step, UINT outNum, float Threshold, bool searchOn);
 	~SP();
@@ -36,6 +36,8 @@ private:
 	UINT spInd = 0;
 	UINT InW;
 	UINT InH;
+	ID3D12Resource* Inup = nullptr;
+	ID3D12Resource* Indef = nullptr;
 
 	CNN* cnn = nullptr;
 
@@ -48,7 +50,7 @@ private:
 	float Threshold;//臒l
 
 	PolygonData2D* din;
-	UINT*** pixIn = nullptr;
+	UCHAR** pixIn = nullptr;
 	int TexNo = -1;
 	UINT SearchMaxNum;
 	bool searchon;
@@ -98,7 +100,7 @@ public:
 	void Training();
 	void Test();
 	void NNDraw();
-	void INDraw(float x, float y, float xsize, float ysize);
+	void INDraw(int com_no, float x, float y, float xsize, float ysize);
 	void SPDraw();
 	int Geterrer();
 	int Getcurrout();

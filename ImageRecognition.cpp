@@ -6,7 +6,7 @@
 
 #define _CRT_SECURE_NO_WARNINGS
 #include "ImageRecognition.h"
-#include "TextureLoader.h"
+#include "TextureBinaryLoader.h"
 
 SP::SP(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, float outscale, UINT step, UINT outNum, float Threshold, bool searchOn) {
 	Sp = new SearchPixel(srcwid, srchei, seawid, seahei, outscale, step, outNum, Threshold);
@@ -27,19 +27,25 @@ SP::SP(UINT srcwid, UINT srchei, UINT seawid, UINT seahei, float outscale, UINT 
 	out = new float[SearchMaxNum];
 	spPix = new float[srcwid * srchei];
 	Sp->CreareNNTexture(spow, spoh, 1);
-	dsp[0].SetCommandList(0);
-	dsp[0].GetVBarray2D(1);
-	dsp[0].TextureInit(spow, spoh);
-	dsp[0].TexOn();
-	dsp[0].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
-	dsp[1].SetCommandList(0);
-	dsp[1].GetVBarray2D(1);
-	dsp[1].TextureInit(srcwid, srchei);
-	dsp[1].TexOn();
-	dsp[1].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
+	dsp[0] = new PolygonData2D();
+	dsp[0]->SetName("SP.dsp[0]");
+	dsp[0]->SetCommandList(0);
+	dsp[0]->GetVBarray2D(1);
+	dsp[0]->TextureInit(spow, spoh);
+	dsp[0]->TexOn();
+	dsp[0]->CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
+	dsp[1] = new PolygonData2D();
+	dsp[1]->SetName("SP.dsp[1]");
+	dsp[1]->SetCommandList(0);
+	dsp[1]->GetVBarray2D(1);
+	dsp[1]->TextureInit(srcwid, srchei);
+	dsp[1]->TexOn();
+	dsp[1]->CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 }
 
 SP::~SP() {
+	S_DELETE(dsp[0]);
+	S_DELETE(dsp[1]);
 	ARR_DELETE(spPix);
 	S_DELETE(Sp);
 	ARR_DELETE(out);
@@ -64,14 +70,15 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 
 	SearchMaxNum = sp[0]->SearchMaxNum;
 
-	Layer layer[7];
+	Layer layer[11];
 	UINT layerCnt = 0;
 
 	layer[0].mapWid = width;
 	layer[0].mapHei = height;
 	layer[0].maxThread = SearchMaxNum;
 	layer[layerCnt].layerName = CONV;
-	layer[layerCnt].acName = ReLU;
+	layer[layerCnt].acName = ELU;
+	layer[layerCnt].optName = ADAM;
 	layer[layerCnt].NumFilter = filnum;
 	layer[layerCnt].NumConvFilterWid = 7;
 	layer[layerCnt++].NumConvFilterSlide = 1;
@@ -80,7 +87,18 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	layer[layerCnt++].NumFilter = filnum;
 
 	layer[layerCnt].layerName = CONV;
-	layer[layerCnt].acName = ReLU;
+	layer[layerCnt].acName = ELU;
+	layer[layerCnt].optName = ADAM;
+	layer[layerCnt].NumFilter = filnum;
+	layer[layerCnt].NumConvFilterWid = 5;
+	layer[layerCnt++].NumConvFilterSlide = 1;
+
+	layer[layerCnt].layerName = POOL;
+	layer[layerCnt++].NumFilter = filnum;
+
+	layer[layerCnt].layerName = CONV;
+	layer[layerCnt].acName = ELU;
+	layer[layerCnt].optName = ADAM;
 	layer[layerCnt].NumFilter = filnum * 2;
 	layer[layerCnt].NumConvFilterWid = 5;
 	layer[layerCnt++].NumConvFilterSlide = 1;
@@ -89,7 +107,18 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	layer[layerCnt++].NumFilter = filnum * 2;
 
 	layer[layerCnt].layerName = CONV;
-	layer[layerCnt].acName = ReLU;
+	layer[layerCnt].acName = ELU;
+	layer[layerCnt].optName = ADAM;
+	layer[layerCnt].NumFilter = filnum * 4;
+	layer[layerCnt].NumConvFilterWid = 3;
+	layer[layerCnt++].NumConvFilterSlide = 1;
+
+	layer[layerCnt].layerName = POOL;
+	layer[layerCnt++].NumFilter = filnum * 4;
+
+	layer[layerCnt].layerName = CONV;
+	layer[layerCnt].acName = ELU;
+	layer[layerCnt].optName = ADAM;
 	layer[layerCnt].NumFilter = filnum * 4;
 	layer[layerCnt].NumConvFilterWid = 3;
 	layer[layerCnt++].NumConvFilterSlide = 1;
@@ -98,7 +127,8 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	layer[layerCnt++].NumFilter = filnum * 4;
 
 	layer[layerCnt].layerName = AFFINE;
-	layer[layerCnt].acName = ReLU;
+	layer[layerCnt].acName = ELU;
+	layer[layerCnt].optName = ADAM;
 	layer[layerCnt].topAcName = CrossEntropySigmoid;
 	layer[layerCnt].NumFilter = filnum * 4;
 	layer[layerCnt].numNode[0] = 64;
@@ -111,20 +141,16 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 	if (!searchon)p2dNum = 1;
 	din = new PolygonData2D[p2dNum];
 	for (UINT i = 0; i < p2dNum; i++) {
+		din[i].SetName("ImageRecognition.din");
 		din[i].SetCommandList(0);
 		din[i].GetVBarray2D(1);
 		din[i].TextureInit(Width, Height);
 		din[i].TexOn();
 		din[i].CreateBox(0.0f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f, TRUE, TRUE);
 	}
-	pixIn = new UINT * *[p2dNum];
+	pixIn = new UCHAR*[p2dNum];
 	for (UINT i = 0; i < p2dNum; i++) {
-		pixIn[i] = new UINT * [Height];
-	}
-	for (UINT i = 0; i < p2dNum; i++) {
-		for (UINT k = 0; k < Height; k++) {
-			pixIn[i][k] = new UINT[Width];
-		}
+		pixIn[i] = new UCHAR[Height * Width * 4];
 	}
 
 	SetCommandList(0);
@@ -136,11 +162,13 @@ ImageRecognition::ImageRecognition(UINT srcWid, UINT srcHei, UINT width, UINT he
 
 ImageRecognition::~ImageRecognition() {
 
+	S_DELETE(sp[0]);
+	S_DELETE(sp[1]);
+	S_DELETE(sp[2]);
+	RELEASE(Inup);
+	RELEASE(Indef);
 	UINT p2dNum = SearchMaxNum;
 	if (!searchon)p2dNum = 1;
-	for (UINT k = 0; k < p2dNum; k++) {
-		for (UINT i = 0; i < Height; i++)ARR_DELETE(pixIn[k][i]);
-	}
 	for (UINT k = 0; k < p2dNum; k++)ARR_DELETE(pixIn[k]);
 	ARR_DELETE(pixIn);
 	S_DELETE(cnn);
@@ -220,7 +248,8 @@ void ImageRecognition::LearningDecay(float in, float scale) {
 
 	float c = 0.10f * pow((1.0f - in), 3) * scale;
 	float n = 0.05f * pow((1.0f - in), 3) * scale;
-	cnn->SetLearningLate(n, c);
+	//cnn->SetLearningLate(n, c);
+	cnn->SetActivationAlpha(0.1f, 0.1f);
 }
 
 void ImageRecognition::Training() {
@@ -259,11 +288,10 @@ void ImageRecognition::SetLearningNum(UINT texNum, UINT ppmNum) {
 	learTexNum = texNum;
 	ppmPosNum = ppmNum;
 	for (UINT i = 0; i < learTexNum; i++) {
-		D3D12_RESOURCE_DESC texdesc = GetTexture(i)->GetDesc();
-		UINT width = texdesc.Width;
-		UINT height = texdesc.Height;
+		UINT width = getInternalTexture(i)->width;
+		UINT height = getInternalTexture(i)->height;
 		UINT sepNum = (width / Width) * (height / Height);
-		if (i < TextureLoader::GetlearningCorrectFaceFirstInd()) {
+		if (i < TextureBinaryLoader::GetlearningCorrectFaceFirstInd()) {
 			negaNum += sepNum;
 		}
 		else {
@@ -273,22 +301,19 @@ void ImageRecognition::SetLearningNum(UINT texNum, UINT ppmNum) {
 	posNum = texPosNum + ppmPosNum;
 }
 
-void ImageRecognition::CreateLearningImagebyte(float RateOftrainImage, BYTE *ppm) {
+void ImageRecognition::CreateLearningImagebyte(float RateOftrainImage, BYTE* ppm) {
 
 	srand((unsigned)time(NULL));
 
-	BYTE *posImage = new BYTE[posNum * Width * Height];
-	BYTE *negaImage = new BYTE[negaNum * Width * Height];
+	BYTE* posImage = new BYTE[posNum * Width * Height];
+	BYTE* negaImage = new BYTE[negaNum * Width * Height];
 	int negaInd = 0;
 	int posInd = 0;
 
 	for (UINT i = 0; i < learTexNum; i++) {
-		D3D12_SUBRESOURCE_DATA texResource;
-		GetTextureUp(i)->Map(0, nullptr, reinterpret_cast<void**>(&texResource));
-		unsigned char *ptex = (unsigned char*)texResource.pData;
-		D3D12_RESOURCE_DESC texdesc = GetTexture(i)->GetDesc();
-		UINT Wid = texdesc.Width;//画像サイズ
-		UINT Hei = texdesc.Height;
+		unsigned char* ptex = getInternalTexture(i)->byteArr;
+		UINT Wid = getInternalTexture(i)->width;//画像サイズ
+		UINT Hei = getInternalTexture(i)->height;
 		UINT sepW = Wid / Width;//画像個数
 		UINT sepH = Hei / Height;
 		UINT pixWidNum = Wid * 4;
@@ -301,7 +326,7 @@ void ImageRecognition::CreateLearningImagebyte(float RateOftrainImage, BYTE *ppm
 					for (UINT wid = widst; wid < Width + widst; wid++) {
 						UINT pInd = pixWidNum * hei + wid * 4;
 						UINT pt = (ptex[pInd + 0] + ptex[pInd + 1] + ptex[pInd + 2]) / 3;
-						if (i < TextureLoader::GetlearningCorrectFaceFirstInd()) {
+						if (i < TextureBinaryLoader::GetlearningCorrectFaceFirstInd()) {
 							negaImage[negaInd++] = pt;
 						}
 						else {
@@ -311,15 +336,13 @@ void ImageRecognition::CreateLearningImagebyte(float RateOftrainImage, BYTE *ppm
 				}
 			}
 		}
-
-		GetTextureUp(i)->Unmap(0, nullptr);
 	}
 
 	//ppmData付け足す
 	memcpy(&posImage[posInd], ppm, sizeof(BYTE) * ppmPosNum * Width * Height);
 
 	//学習データシャッフル
-	BYTE *tmp = new BYTE[Width * Height];
+	BYTE* tmp = new BYTE[Width * Height];
 	size_t tmpSize = sizeof(BYTE) * Width * Height;
 	for (UINT i = 0; i < posNum; i++) {
 		int ind1 = (rand() % posNum) * Width * Height;
@@ -422,8 +445,12 @@ void ImageRecognition::LearningByteImage() {
 				el = ((float)negaImageTrain[i + imInd] / 255.0f * 0.99f) + 0.01f;
 			}
 
-			if (positivef == 0)pixIn[0][pixY][pixX] = ((UINT)(el * 255.0f) << 16) + ((UINT)(el * 255.0f) << 8) + ((UINT)(el * 255.0f));
-
+			if (positivef == 0) {
+				pixIn[0][pixY * Width * 4 + pixX * 4 + 0] = 255;
+				pixIn[0][pixY * Width * 4 + pixX * 4 + 1] = ((UCHAR)(el * 255.0f));
+				pixIn[0][pixY * Width * 4 + pixX * 4 + 2] = ((UCHAR)(el * 255.0f));
+				pixIn[0][pixY * Width * 4 + pixX * 4 + 3] = ((UCHAR)(el * 255.0f));
+			}
 			cnn->FirstInput(el, i, k);
 		}
 	}
@@ -486,9 +513,10 @@ void ImageRecognition::searchPixel() {
 		searchPixelContrastAdjustment(oneImage, max, min);
 		for (UINT i = 0; i < Width * Height; i++) {
 			float el = oneImage[i];
-			UINT pixX = i % Width;
-			UINT pixY = i / Width;
-			pixIn[seacnt][pixY][pixX] = ((UINT)(el * 255.0f) << 16) + ((UINT)(el * 255.0f) << 8) + ((UINT)(el * 255.0f));
+			pixIn[seacnt][i * 4 + 0] = 255.0f;
+			pixIn[seacnt][i * 4 + 1] = ((UCHAR)(el * 255.0f));
+			pixIn[seacnt][i * 4 + 2] = ((UCHAR)(el * 255.0f));
+			pixIn[seacnt][i * 4 + 3] = ((UCHAR)(el * 255.0f));
 			cnn->FirstInput(el, i, seacnt);
 		}
 		seacnt++;
@@ -507,17 +535,26 @@ void ImageRecognition::searchPixelContrastAdjustment(float *arr, float max, floa
 void ImageRecognition::InputTexture(int Tno) {
 	spInd++;
 	if (spInd > 2)spInd = 0;
-	D3D12_SUBRESOURCE_DATA texResource;
-	GetTextureUp(Tno)->Map(0, nullptr, reinterpret_cast<void**>(&texResource));
-	UCHAR* ptex = (UCHAR*)texResource.pData;
+	UCHAR* ptex = getInternalTexture(Tno)->byteArr;
 	for (UINT i = 0; i < InW * InH; i++) {
 		UCHAR tmp = (ptex[i * 4] + ptex[i * 4 + 1] + ptex[i * 4 + 2]) / 3;
 		sp[spInd]->spPix[i] = ((float)tmp / 255.0f * 0.99f) + 0.01f;
 	}
-	GetTextureUp(Tno)->Unmap(0, nullptr);
-
-	sp[spInd]->Sp->SetPixel3ch(GetTexture(Tno));
-	cnn->SetPixel3ch(GetTexture(Tno));
+	RELEASE(Inup);
+	RELEASE(Indef);
+	dx->Bigin(0);
+	int w = getInternalTexture(Tno)->width;
+	int h = getInternalTexture(Tno)->height;
+	dx->createTexture(0, ptex, DXGI_FORMAT_R8G8B8A8_UNORM,
+		&Inup, &Indef,
+		getInternalTexture(Tno)->width,
+		getInternalTexture(Tno)->width * 4,
+		getInternalTexture(Tno)->height);
+	dx->End(com_no);
+	dx->RunGpu();
+	dx->WaitFence();
+	sp[spInd]->Sp->SetPixel3ch(Indef);
+	cnn->SetPixel3ch(Indef);
 	searchPixel();
 }
 
@@ -538,7 +575,7 @@ void ImageRecognition::NNDraw() {
 	cnn->TrainingDraw();
 }
 
-void ImageRecognition::INDraw(float x, float y, float xsize, float ysize) {
+void ImageRecognition::INDraw(int com_no, float x, float y, float xsize, float ysize) {
 
 	UINT cnt = 0;
 	UINT p2dNum = sp[spInd]->SearchMaxNum;
@@ -546,7 +583,7 @@ void ImageRecognition::INDraw(float x, float y, float xsize, float ysize) {
 	for (int i = 0; i < p2dNum; i++) {
 		din[i].Update(cnt * 52.0f + x, 548.0f + y, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 52.0f + xsize, 52.0f + ysize);
 		if (sp[spInd]->SearchMaxNum == BADGENUM || Threshold <= sp[spInd]->out[i]) {
-			din[i].SetTextureMPixel(pixIn[i], 0xff, 0xff, 0xff, 255);
+			din[i].SetTextureMPixel(com_no, pixIn[i], 0);
 			cnt++;
 			din[i].Draw();
 		}
@@ -554,12 +591,12 @@ void ImageRecognition::INDraw(float x, float y, float xsize, float ysize) {
 }
 
 void ImageRecognition::SPDraw() {
-	/*sp[spInd]->dsp[0].Update(50.0f, 200.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 300.0f, 200.0f);
-	sp[spInd]->dsp[0].CopyResource(sp[spInd]->Sp->GetNNTextureResource(), sp[spInd]->Sp->GetNNTextureResourceStates());
-	sp[spInd]->dsp[0].Draw();*/
-	sp[spInd]->dsp[1].Update(350.0f, 200.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 300.0f, 200.0f);
-	sp[spInd]->dsp[1].CopyResource(sp[spInd]->Sp->GetOutputResource(), sp[spInd]->Sp->GetNNTextureResourceStates());
-	sp[spInd]->dsp[1].Draw();
+	sp[spInd]->dsp[0]->Update(50.0f, 200.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 300.0f, 200.0f);
+	sp[spInd]->dsp[0]->CopyResource(sp[spInd]->Sp->GetNNTextureResource(), sp[spInd]->Sp->GetNNTextureResourceStates());
+	//sp[spInd]->dsp[0]->Draw();
+	sp[spInd]->dsp[1]->Update(350.0f, 200.0f, 0.8f, 1.0f, 1.0f, 1.0f, 1.0f, 300.0f, 200.0f);
+	sp[spInd]->dsp[1]->CopyResource(sp[spInd]->Sp->GetOutputResource(), sp[spInd]->Sp->GetNNTextureResourceStates());
+	sp[spInd]->dsp[1]->Draw();
 	cnn->GradCAMDraw();
 }
 
@@ -568,10 +605,14 @@ void ImageRecognition::textDraw(UINT stateNum, float x, float y) {
 	if (stateNum == 0)return;
 	switch (stateNum) {
 	case 1:
-		DxText::GetInstance()->UpDateText(L"test誤差 ", 600.0f, 370.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
+		DxText::GetInstance()->UpDateText(false,DxText::GetInstance()->getStr("test誤差%f ", cnn->GetcrossEntropyErrorTest()), 600.0f, 370.0f);
+		DxText::GetInstance()->UpDateText(false,DxText::GetInstance()->getStr("誤差%f", cnn->GetcrossEntropyError()), 600.0f, 385.0f);
+
+		/*DxText::GetInstance()->UpDateText(L"test誤差 ", 600.0f, 370.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 		DxText::GetInstance()->UpDateValue((int)(cnn->GetcrossEntropyErrorTest() * 100.0f), 710.0f, 370.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
 		DxText::GetInstance()->UpDateText(L"誤差 ", 600.0f, 385.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 		DxText::GetInstance()->UpDateValue((int)(cnn->GetcrossEntropyError() * 100.0f), 710.0f, 385.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
+		*/
 		DxText::GetInstance()->UpDateText(L"学習中出力 ", 600.0f, 400.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
 		DxText::GetInstance()->UpDateValue(currout, 710.0f, 400.0f, 15.0f, 2, { 1.0f, 1.0f, 1.0f, 1.0f });
 		DxText::GetInstance()->UpDateText(L"Target ", 600.0f, 415.0f, 15.0f, { 1.0f, 1.0f, 1.0f, 1.0f });
