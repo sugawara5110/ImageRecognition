@@ -11,6 +11,7 @@
 #include "../../../Common/DirectShowWrapper\Camera.h"
 #include "../../../CNN/Graph.h"
 #include "../../../PPMLoader/PPMLoader.h"
+#include "../../../T_float/T_float.h"
 #pragma comment(lib,"winmm.lib")
 #define COUNT 80000
 
@@ -28,25 +29,43 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	HWND hWnd;
 	MSG msg;
-	//DirectX12ラッパー
-	Dx12Process* dx;
-	//文字入力
-	DxText* text;
 
 	Createwindow(&hWnd, hInstance, nCmdShow, 900, 600, L"ImageDetection");
 
-	//Dx12Processオブジェクト生成
-	Dx12Process::InstanceCreate();
-	//Dx11Processオブジェクト取得
-	dx = Dx12Process::GetInstance();
-	dx->Initialize(hWnd, 900, 800);
+	Dx_Device::InstanceCreate();
+	Dx_Device::GetInstance()->createDevice();
+	Dx_Device::GetInstance()->reportLiveDeviceObjectsOn();
+	Dx_CommandManager::InstanceCreate();
+	Dx_SwapChain::InstanceCreate();
+
+	Dx_TextureHolder::InstanceCreate();
+	Dx_TextureHolder* dx = Dx_TextureHolder::GetInstance();
+
+	Dx_Device* dev = Dx_Device::GetInstance();
+	dev->dxrCreateResource();
+	Dx_SwapChain* sw = Dx_SwapChain::GetInstance();
+
+	Dx_CommandManager::setNumResourceBarrier(1024);
+
+	sw->Initialize(hWnd, 900, 800);
+
+	sw->setPerspectiveFov(55, 1, 10000);
+	Dx_Light::Initialize();
+	Dx_ShaderHolder::CreateShaderByteCode();
+
+	Dx_CommandManager* cMa = Dx_CommandManager::GetInstance();
+	Dx_CommandListObj* d = cMa->getGraphicsComListObj(0);
+	ID3D12GraphicsCommandList* CList = d->getCommandList();
+
+
 	//dx->reportLiveDeviceObjectsOn();
 	Camera* cam = nullptr;
 	//test
 	//Movie mov("aaa.avi");
 	bool camOn = false;
+	//文字入力
 	DxText::InstanceCreate();
-	text = DxText::GetInstance();
+	DxText* text = DxText::GetInstance();
 	TextureBinaryLoader::TextureLoad();
 	Control* control;
 	PPMLoader* ppm = nullptr;
@@ -179,7 +198,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					break;
 				}
 				enter = false;
-				dx->Bigin(0);
+				d->Bigin();
 				input = new UINT[2];
 				input[0] = 64;
 				input[1] = 1;
@@ -198,9 +217,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					graph[1] = new Graph();
 					graph[1]->CreateGraph(357, 218, 256, 128, 256, 256);
 				}
-				dx->End(0);
-				dx->RunGpu();
-				dx->WaitFence();
+				d->End();
+				cMa->RunGpu();
+				cMa->WaitFence();
 				if (state == 2)nn->LoadData();
 			}
 			DxText::GetInstance()->UpDateText(L"学習モード ", 100.0f, 100.0f, 15.0f, { 0.3f, 0.3f, br0, 1.0f });
@@ -274,11 +293,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		VECTOR3 cam1 = { 0, -170, 0 };
 		MatrixRotationZ(&camThetaZ, camTheta * 360.0f);
 		VectorMatrixMultiply(&cam1, &camThetaZ);
-		dx->Cameraset(cam1, { 0, 0, 0 });
+		sw->Cameraset(cam1, { 0, 0, 0 });
 		if ((camTheta += 0.01f) > 360.0f)camTheta = 0.0f;
 
-		dx->Bigin(0);
-		dx->BiginDraw(0, true);
+		d->Bigin();
+		sw->BiginDraw(0, true);
 		if (state != 0 && drawOn) {
 			if (state == 1) {
 				nn->NNDraw();
@@ -318,11 +337,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 		text->UpDate();
 		text->Draw(0);
-		dx->EndDraw(0);
-		dx->End(0);
-		dx->RunGpu();
-		dx->WaitFence();
-		dx->DrawScreen();
+		sw->EndDraw(0);
+		d->End();
+		cMa->RunGpu();
+		cMa->WaitFence();
+		sw->DrawScreen();
 	}
 	ARR_DELETE(input);
 	S_DELETE(nn);
@@ -334,6 +353,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	DxInput::DeleteInstance();
 	Control::DeleteInstance();
 	DxText::DeleteInstance();
-	Dx12Process::DeleteInstance();
+	Dx_SwapChain::DeleteInstance();
+	Dx_TextureHolder::DeleteInstance();
+	Dx_CommandManager::DeleteInstance();
+	Dx_Device::DeleteInstance();
 	return (int)msg.wParam;
 }

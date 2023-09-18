@@ -43,7 +43,7 @@ void TextureBinaryLoader::TextureLoad() {
 			texNum++;
 		}
 	}
-	TextureLoader::GetTexture2(texNum, tex, Dx12Process::GetInstance());
+	TextureLoader::GetTexture2(texNum, tex, Dx_TextureHolder::GetInstance());
 }
 
 void TextureBinaryLoader::DeleteTextureStruct() {
